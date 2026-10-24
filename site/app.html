@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mon espace — Agents Emploi</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https: http://localhost:8000; frame-src https://accounts.google.com/gsi/ https://appleid.apple.com; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0a0a0c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Agents Emploi">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icones/icone-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bandeau" id="bandeau-demo" hidden>Mode démo : le serveur n'est pas encore branché, les réponses sont fictives et rien n'est envoyé. <a href="./">Retour à l'accueil</a></div>
+
+<!-- Connexion -->
+<section class="ecran" id="ecran-connexion" hidden>
+  <div class="boite">
+    <a class="logo" href="./"><span class="logo-marque">A</span>Agents Emploi</a>
+    <h1>Ton espace</h1>
+    <p class="sous">Connecte-toi ou crée ton compte en un geste. Aucun mot de passe à retenir.</p>
+    <div class="fournisseurs">
+      <div id="bouton-google"></div>
+      <button class="bouton clair" id="bouton-apple" type="button" hidden> Continuer avec Apple</button>
+    </div>
+    <div class="separateur" id="sep-fournisseurs">ou avec ton email</div>
+    <form id="form-email">
+      <div class="champ"><label for="email">Adresse email</label>
+        <input type="email" id="email" autocomplete="email" inputmode="email" required placeholder="prenom.nom@gmail.com"></div>
+      <button class="bouton large" type="submit">Recevoir un code</button>
+    </form>
+    <form id="form-code" hidden>
+      <div class="champ"><label for="code">Code reçu par email</label>
+        <input class="code" type="text" id="code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••"></div>
+      <button class="bouton" type="submit">Me connecter</button>
+      <button class="bouton clair petit" type="button" id="autre-email">Changer d'email</button>
+    </form>
+    <p class="erreur" id="erreur-connexion" role="alert"></p>
+    <p class="petit-texte">En continuant, tu acceptes notre <a href="confidentialite.html">politique de confidentialité</a>.
+      Tes données ne servent qu'à faire tourner ton agent et se suppriment en un clic.</p>
+  </div>
+</section>
+
+<!-- Choix de l'agent -->
+<section class="ecran" id="ecran-agents" hidden>
+  <div class="page">
+    <span class="mono">Étape 1 sur 2</span>
+    <h1 class="titre-agents">Quel agent travaille pour toi ?</h1>
+    <p class="sous">Choisis ton domaine. Tu pourras en changer plus tard (ton espace repartira de zéro).</p>
+    <div class="agents" id="choix-agents"></div>
+  </div>
+</section>
+
+<!-- Application -->
+<div class="coque" id="ecran-app" hidden>
+  <aside class="cote" role="tablist" aria-label="Sections">
+    <a class="logo" href="./"><span class="logo-marque">A</span>Agents Emploi</a>
+    <button class="onglet" role="tab" data-vue="discussion" aria-selected="true"><span class="icone">💬</span>Discussion<span class="pastille" id="pastille" hidden>0</span></button>
+    <button class="onglet" role="tab" data-vue="candidatures" aria-selected="false"><span class="icone">📄</span>Candidatures</button>
+    <button class="onglet" role="tab" data-vue="test" aria-selected="false"><span class="icone">🧪</span>Phase de test</button>
+    <button class="onglet" role="tab" data-vue="reglages" aria-selected="false"><span class="icone">⚙️</span>Réglages</button>
+    <div class="bas" id="qui"></div>
+  </aside>
+  <main class="principal">
+    <div class="barre"><h2 id="titre-vue">Discussion</h2><span class="etat etiquette vert" id="etat-agent">Agent actif</span></div>
+
+    <section class="vue" id="vue-discussion" aria-live="polite"><div class="fil" id="fil"></div></section>
+    <section class="vue" id="vue-candidatures" hidden><div class="liste" id="liste-cand"></div></section>
+    <section class="vue" id="vue-test" hidden><div class="carte-test" id="carte-test"></div></section>
+    <section class="vue" id="vue-reglages" hidden>
+      <div class="reglages">
+        <div class="reglage"><label class="case"><input type="checkbox" id="notif">
+          <span><b>Recevoir par email</b><br><small>Quand ton agent t'écrit et que tu n'es pas sur le site, tu reçois un récapitulatif par email (lettres en PDF jointes).</small></span></label></div>
+        <div class="reglage"><b>Adresse des tests</b><p class="petit-texte serre">Pendant la phase de test, les candidatures arrivent sur <b id="adresse-test"></b>, jamais chez un recruteur.</p></div>
+        <div class="reglage"><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
+          (LinkedIn, Jobat, StepStone, Indeed…) : ton agent lit chaque offre et s'en occupe. Les recruteurs y répondent aussi.</p>
+          <span class="code-agent" id="adresse-agent"></span></div>
+        <div class="reglage"><b>Ton agent</b><p class="petit-texte serre" id="agent-actuel"></p>
+          <button class="bouton clair petit" type="button" id="changer-agent">Changer d'agent</button></div>
+        <div class="reglage"><button class="bouton clair petit" type="button" id="deconnexion">Me déconnecter</button></div>
+        <div class="reglage danger"><b>Supprimer mon compte</b>
+          <p class="petit-texte serre">Efface définitivement ton compte, ton CV, tes lettres et la mémoire de ton agent.</p>
+          <button class="bouton petit" type="button" id="supprimer">Supprimer mon compte</button></div>
+      </div>
+    </section>
+
+    <form class="saisie" id="saisie">
+      <input type="file" id="fichier-cv" accept="application/pdf" class="cache">
+      <button class="rond" type="button" id="joindre" title="Envoyer mon CV (PDF)" aria-label="Envoyer mon CV en PDF">📎</button>
+      <label for="message" class="cache">Ton message</label>
+      <textarea id="message" rows="1" maxlength="4000" placeholder="Écris à ton agent… (« cherche maintenant », « note 14 : trop long »)"></textarea>
+      <button class="rond plein" type="submit" aria-label="Envoyer">➤</button>
+    </form>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="accueil.js"></script>
+<script src="demo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
