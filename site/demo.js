@@ -53,7 +53,7 @@ window.DEMO = (() => {
       if (chemin === "/api/agents") return AGENTS_SECOURS;
       if (chemin === "/api/auth/code") return { ok: true };
       if (chemin === "/api/auth/code/verifier") {
-        etat.utilisateur = { email: corps.email, nom: null, agent: null, notif_email: true, fournisseur: "email", adresse_test: corps.email };
+        etat.utilisateur = { email: corps.email, nom: null, agent: null, notif_email: true, fournisseur: "email", adresse_test: corps.email, adresse_agent: "agents.emploi+demo1234@gmail.com" };
         return { jeton: "demo", utilisateur: etat.utilisateur };
       }
       if (!etat.utilisateur) etat.utilisateur = { email: "toi@exemple.be", agent: null, notif_email: true, adresse_test: "toi@exemple.be" };

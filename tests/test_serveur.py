@@ -210,6 +210,31 @@ class BoutEnBout(unittest.TestCase):
         finally:
             espaces.arreter_tout()
 
+    def test_mode_econome(self):
+        """1 000 utilisateurs = autant de mémoire que 10 : tournées limitées, agents éteints quand on ne leur parle pas."""
+        os.environ.update({"MAX_AGENTS": "1", "INACTIF_MIN": "0.02"})
+        try:
+            ids = []
+            for i in range(3):
+                connecter(f"eco{i}@exemple.be")
+                ids.append(uid(f"eco{i}@exemple.be"))
+                with base.tx() as c:
+                    c.execute("UPDATE utilisateurs SET agent='avocat' WHERE id=?", (ids[-1],))
+                base.kv_set(f"tournee_{ids[-1]}", 0)
+            espaces.surveiller()
+            self.assertEqual(espaces.charge()["tournees"], 1)                 # jamais plus que MAX_AGENTS
+            espaces.demarrer(ids[2])                                          # elle écrit : priorité absolue
+            self.assertTrue(espaces.en_marche(ids[2]))
+            for _ in range(120):                                              # il s'éteint seul (1,2 s d'inactivité)
+                if not espaces.en_marche(ids[2]):
+                    break
+                time.sleep(0.25)
+            self.assertFalse(espaces.en_marche(ids[2]))
+        finally:
+            for k in ("MAX_AGENTS", "INACTIF_MIN"):
+                del os.environ[k]
+            espaces.arreter_tout()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

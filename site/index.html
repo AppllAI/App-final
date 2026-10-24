@@ -4,25 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Agents Emploi — ton agent postule pour toi</title>
-  <meta name="description" content="Un agent IA qui cherche les offres, écrit une lettre sur mesure pour chacune et postule pour toi. Tu ne fais que décider.">
+  <meta name="description" content="Un agent IA qui cherche les offres partout en Belgique, écrit une lettre sur mesure pour chacune et postule pour toi. Tu ne fais que décider.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https: http://localhost:8000; base-uri 'self'; form-action 'self'">
-  <meta name="theme-color" content="#1f4d3a">
+  <meta name="theme-color" content="#0a0a0c">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icones/icone-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div class="grille" aria-hidden="true"></div>
 <header class="entete">
   <div class="page">
     <a class="logo" href="./"><span class="logo-marque">A</span>Agents Emploi</a>
     <nav class="nav" aria-label="Navigation principale">
       <a href="#comment">Comment ça marche</a>
       <a href="#agents">Les agents</a>
-      <a href="#test">La phase de test</a>
+      <a href="#test">Phase de test</a>
       <a href="#securite">Sécurité</a>
       <a class="bouton petit" href="app.html">Mon espace</a>
     </nav>
@@ -30,73 +31,97 @@
 </header>
 
 <main>
-  <section class="page heros">
+  <section class="page heros" id="heros">
+    <div class="halo" aria-hidden="true"></div>
     <div>
-      <span class="surtitre mono">● Bêta gratuite · Belgique</span>
-      <h1>Ton agent postule pour toi. <span class="italique">Tu ne fais que décider.</span></h1>
-      <p class="chapeau">Il cherche les offres en continu, écrit une lettre sur mesure pour chacune, vérifie chaque
-        fait contre ton CV, postule, relance, trie les réponses — et ne te dérange que pour ce qui compte :
-        « Le cabinet X te propose un entretien jeudi à 16h30, tu confirmes ? »</p>
+      <span class="surtitre mono"><span class="point"></span>Bêta gratuite · Belgique</span>
+      <h1>Ton agent postule pour toi. <span class="accent">Tu décides.</span></h1>
+      <p class="chapeau">Il lit les offres de toute la Belgique jour et nuit, écrit une lettre sur mesure pour chacune,
+        vérifie chaque fait contre ton CV, postule, relance et trie les réponses. Il ne te dérange que pour ce qui compte.</p>
       <div class="actions">
-        <a class="bouton" href="app.html">Créer mon espace →</a>
-        <a class="bouton clair" href="#comment">Comment ça marche</a>
+        <a class="bouton" href="app.html">Créer mon espace <span class="fleche">→</span></a>
+        <a class="bouton clair" href="#comment">Voir comment</a>
       </div>
-      <div class="rassurance"><span>✓ Rien n'est envoyé sans ton accord</span><span>✓ Connexion Google, Apple ou email</span><span>✓ Tes données supprimables en un clic</span></div>
+      <div class="rassurance"><span>Rien n'est envoyé sans ton accord</span><span>Google, Apple ou email</span><span>Effaçable en un clic</span></div>
     </div>
-    <div class="pile" aria-hidden="true">
-      <div class="lettre"><div class="ligne"></div><div class="ligne moyenne"></div></div>
-      <div class="lettre"><div class="ligne"></div><div class="ligne courte"></div></div>
-      <div class="lettre">
-        <p><strong>Objet : Candidature – stagiaire avocat</strong></p>
-        <p>Maître,</p>
-        <p>Votre cabinet, <span class="surligne">reconnu pour ses dossiers de baux commerciaux</span>, correspond
-          exactement à l'orientation de mon <span class="surligne">mémoire en droit de la copropriété</span>…</p>
-        <div class="ligne"></div><div class="ligne"></div><div class="ligne moyenne"></div>
-        <div class="ligne"></div><div class="ligne courte"></div>
-        <div class="tampon"><span>Test n°2<b>16/20</b>validé</span></div>
-      </div>
+    <div class="terminal" aria-label="Démonstration : ton agent au travail">
+      <div class="barre-t"><i></i><i></i><i></i><span>agent-avocat · en direct</span></div>
+      <ol id="journal">
+        <li><span class="ok">●</span> Lecture des sources : EURES, Forem, LexGO, pages carrières…</li>
+        <li><b>1 284</b> offres lues · <b>37</b> nouvelles depuis ce matin</li>
+        <li>Tes règles appliquées : <b>29</b> écartées (pénal, néerlandais exigé…)</li>
+        <li>Adéquation 9/10 → <b>Juriste immobilier</b> · Cabinet Lumen, Bruxelles</li>
+        <li>Site officiel du cabinet lu : 3 faits vérifiés, email RH trouvé</li>
+        <li>Lettre écrite · <b>14 faits</b> vérifiés contre ton CV <span class="ok">✓</span></li>
+        <li>Lettre + CV en PDF → envoyés sur <b>ton</b> email (test n°2)</li>
+        <li class="note"><strong>16/20</strong><span>ta note · feu vert : j'attends ton accord</span></li>
+        <li><span class="curseur-t"></span></li>
+      </ol>
     </div>
   </section>
 
+  <div class="sources" aria-label="Sources lues par les agents">
+    <div class="defile">
+      <span>EURES</span><span>Forem</span><span>VDAB</span><span>Actiris</span><span>LexGO</span><span>Indeed</span><span>Google Jobs</span>
+      <span>Alertes LinkedIn</span><span>Alertes Jobat</span><span>Alertes StepStone</span><span>Greenhouse</span><span>Lever</span>
+      <span>Ashby</span><span>Workable</span><span>SmartRecruiters</span><span>Recruitee</span><span>Teamtailor</span><span>Personio</span>
+      <span>Student.be</span><span>StudentJob</span><span>Pages carrières</span><span>Barreaux</span>
+      <span>EURES</span><span>Forem</span><span>VDAB</span><span>Actiris</span><span>LexGO</span><span>Indeed</span><span>Google Jobs</span>
+      <span>Alertes LinkedIn</span><span>Alertes Jobat</span><span>Alertes StepStone</span><span>Greenhouse</span><span>Lever</span>
+      <span>Ashby</span><span>Workable</span><span>SmartRecruiters</span><span>Recruitee</span><span>Teamtailor</span><span>Personio</span>
+      <span>Student.be</span><span>StudentJob</span><span>Pages carrières</span><span>Barreaux</span>
+    </div>
+  </div>
+
   <section class="section" id="comment">
     <div class="page">
-      <div class="tete"><span class="mono">01 — Le principe</span>
-        <div><h2>Quatre étapes, et c'est l'agent qui travaille.</h2>
-          <p>Pas de formulaire de 40 champs : tu parles à ton agent comme à quelqu'un. Il comprend, il retient, il agit.</p></div>
+      <div class="tete apparait"><span class="mono">01 — Le principe</span>
+        <div><h2>Quatre étapes. L'agent fait le reste.</h2>
+          <p>Pas de formulaire de quarante champs : tu parles à ton agent comme à quelqu'un. Il comprend, il retient, il agit.</p></div>
       </div>
-      <div class="etapes">
-        <article class="etape"><h3>Crée ton espace</h3><p>Connecte-toi avec Google, Apple ou ton email, puis choisis l'agent de ton domaine.</p></article>
-        <article class="etape"><h3>Donne-lui ton CV</h3><p>Dépose ton CV en PDF et dis-lui ce que tu cherches, avec tes mots : poste, villes, ce que tu refuses, quand tu commences.</p></article>
-        <article class="etape"><h3>Juge ses candidatures</h3><p>Il t'envoie 3 candidatures sur <em>ton</em> email, comme un recruteur les recevrait. Tu notes sur 20 et tu dis ce que tu aimes ou pas.</p></article>
-        <article class="etape"><h3>Il postule pour toi</h3><p>Après deux tests et au moins 15/20, il te demande ton accord. Ensuite seulement, il écrit aux recruteurs.</p></article>
+      <div class="etapes apparait">
+        <article class="etape lumiere"><span class="num">01</span><h3>Crée ton espace</h3><p>Google, Apple ou ton email. Puis choisis l'agent de ton domaine.</p></article>
+        <article class="etape lumiere"><span class="num">02</span><h3>Donne-lui ton CV</h3><p>Dépose ton CV en PDF et dis ce que tu cherches, avec tes mots : poste, villes, ce que tu refuses.</p></article>
+        <article class="etape lumiere"><span class="num">03</span><h3>Juge son travail</h3><p>Il t'envoie 3 candidatures sur <em>ton</em> email. Tu notes sur 20 et tu expliques ce qui te plaît ou pas.</p></article>
+        <article class="etape lumiere"><span class="num">04</span><h3>Il postule</h3><p>Après deux tests et au moins 15/20, il te demande ton accord. Ensuite seulement, il écrit aux recruteurs.</p></article>
       </div>
     </div>
   </section>
 
   <section class="section" id="agents">
     <div class="page">
-      <div class="tete"><span class="mono">02 — Les agents</span>
+      <div class="tete apparait"><span class="mono">02 — Les agents</span>
         <div><h2>Un agent spécialisé par métier.</h2>
           <p>Chaque agent connaît les bons sites, le vocabulaire et les usages de son domaine. D'autres arrivent.</p></div>
       </div>
-      <div class="agents" id="liste-agents"></div>
+      <div class="agents apparait" id="liste-agents"></div>
     </div>
   </section>
 
   <section class="section" id="test">
     <div class="page">
-      <div class="tete"><span class="mono">03 — La phase de test</span>
-        <div><h2>Rien ne part chez un recruteur avant que <span class="italique">toi</span> tu sois convaincu.</h2>
-          <p>La phase de test est obligatoire. Elle sert à une chose : que chaque lettre te ressemble avant d'être lue par quelqu'un d'autre.</p></div>
+      <div class="tete apparait"><span class="mono">03 — La phase de test</span>
+        <div><h2>Rien ne part chez un recruteur avant que <span class="accent">toi</span> tu sois convaincu.</h2>
+          <p>La phase de test est obligatoire. Essaie : fais glisser la note.</p></div>
       </div>
-      <div class="bareme">
-        <span class="mono">Ta note sur 20</span>
-        <div class="regle" aria-hidden="true"><div class="seuil"><span>15/20 = feu vert</span></div><div class="curseur exemple"></div></div>
-        <div class="graduations" aria-hidden="true"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
+      <div class="bareme lumiere apparait">
+        <div class="essai-note">
+          <div>
+            <span class="mono">Ta note sur 20</span>
+            <div class="regle" aria-hidden="true"><div class="remplissage" id="remplissage"></div><div class="seuil"><span>15/20<em> = feu vert</em></span></div></div>
+            <div class="graduations" aria-hidden="true"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
+            <label class="cache" for="essai-curseur">Note de démonstration</label>
+            <input type="range" id="essai-curseur" min="0" max="20" value="12">
+          </div>
+          <div>
+            <div class="valeur"><span id="essai-valeur">12</span><small>/20</small></div>
+            <div class="verdict" id="essai-verdict"></div>
+          </div>
+        </div>
         <div class="tours">
-          <div class="tour"><span class="etiquette">Test n°1</span><b>3 candidatures</b>envoyées sur ton email. Tu notes et tu expliques : « trop formel », « parle de mon Erasmus »…</div>
-          <div class="tour"><span class="etiquette terre">Test n°2</span><b>Réécrites</b>avec tes remarques, qu'il retient pour toutes les lettres suivantes. Tu notes à nouveau.</div>
-          <div class="tour"><span class="etiquette vert">≥ 15/20</span><b>Ton accord</b>Il te demande la permission. Tu dis oui : il écrit aux recruteurs. Sinon, encore un test.</div>
+          <div class="tour"><span class="etiquette">Test n°1</span><b>3 candidatures</b>sur ton email, exactement comme un recruteur les recevrait. Tu notes et tu dis : « trop formel », « parle de mon Erasmus »…</div>
+          <div class="tour"><span class="etiquette">Test n°2</span><b>Réécrites</b>avec tes remarques, qu'il retient pour toutes les lettres suivantes. Tu notes à nouveau.</div>
+          <div class="tour"><span class="etiquette vert">≥ 15/20</span><b>Ton accord</b>Il te demande la permission. Oui : il écrit aux recruteurs. Sinon : encore un test.</div>
         </div>
       </div>
     </div>
@@ -104,36 +129,41 @@
 
   <section class="section">
     <div class="page">
-      <div class="tete"><span class="mono">04 — Ce qu'il fait</span>
+      <div class="tete apparait"><span class="mono">04 — Ce qu'il fait</span>
         <div><h2>Tout le travail ingrat, fait sérieusement.</h2></div>
       </div>
-      <div class="atouts">
-        <div class="atout"><div class="icone">🔎</div><h3>Il cherche partout, tout le temps</h3><p>Sites d'emploi, pages carrières des employeurs, et ceux qui recrutent sans publier d'annonce.</p></div>
-        <div class="atout"><div class="icone">✍️</div><h3>Une lettre par offre</h3><p>Écrite pour CET employeur, mise en page en PDF, jointe à un email court. Jamais un copier-coller.</p></div>
-        <div class="atout"><div class="icone">🧾</div><h3>Zéro invention</h3><p>Chaque fait de la lettre est vérifié contre ton CV par un second agent, puis par le code. Une durée inventée ? Bloquée.</p></div>
-        <div class="atout"><div class="icone">🧠</div><h3>Il se souvient</h3><p>« Tu te souviens du cabinet de mardi ? » Il retrouve. Tes préférences valent pour toutes les lettres suivantes.</p></div>
-        <div class="atout"><div class="icone">📬</div><h3>Il trie les réponses</h3><p>Les refus ? Tu n'en entends pas parler. Une question d'un recruteur ou un entretien ? Il te prévient tout de suite.</p></div>
-        <div class="atout"><div class="icone">📅</div><h3>Il gère tes entretiens</h3><p>Tu confirmes d'un clic, il répond au recruteur, t'envoie le rendez-vous et une fiche de préparation la veille.</p></div>
+      <div class="atouts apparait">
+        <div class="atout lumiere"><div class="icone">⌕</div><h3>Toute la Belgique, tout le temps</h3><p>Services publics (Forem, VDAB, Actiris via EURES), sites d'emploi, pages carrières d'entreprises, tes alertes LinkedIn — et ceux qui recrutent sans annonce.</p></div>
+        <div class="atout lumiere"><div class="icone">✎</div><h3>Une lettre par offre</h3><p>Écrite pour CET employeur, mise en page en PDF, jointe à un email court. Jamais un copier-coller.</p></div>
+        <div class="atout lumiere"><div class="icone">✓</div><h3>Zéro invention</h3><p>Chaque fait est vérifié contre ton CV par un second agent, puis par le code. Une durée inventée ? Bloquée.</p></div>
+        <div class="atout lumiere"><div class="icone">◎</div><h3>Il se souvient</h3><p>« Tu te souviens du cabinet de mardi ? » Il retrouve. Tes préférences valent pour toutes les lettres suivantes.</p></div>
+        <div class="atout lumiere"><div class="icone">✉</div><h3>Il trie les réponses</h3><p>Les refus ? Tu n'en entends pas parler. Une question ou un entretien ? Il te prévient tout de suite.</p></div>
+        <div class="atout lumiere"><div class="icone">▦</div><h3>Il gère tes entretiens</h3><p>Tu confirmes d'un clic, il répond, t'envoie le rendez-vous et une fiche de préparation la veille.</p></div>
+      </div>
+      <div class="chiffres apparait">
+        <div><strong data-compte="20">0</strong><span>sources et plus, lues sans relâche</span></div>
+        <div><strong data-compte="26000" data-suffixe="+">0</strong><span>offres publiques en temps réel</span></div>
+        <div><strong>2 × 15/20</strong><span>avant le premier envoi réel</span></div>
+        <div><strong>0 €</strong><span>pendant la bêta</span></div>
       </div>
     </div>
   </section>
 
   <section class="section" id="securite">
     <div class="page">
-      <div class="tete"><span class="mono">05 — Sécurité</span>
-        <div><h2>Tes données sont à toi.</h2>
-          <p>Un CV, c'est personnel. Voici concrètement comment on le protège.</p></div>
+      <div class="tete apparait"><span class="mono">05 — Sécurité</span>
+        <div><h2>Tes données sont à toi.</h2><p>Un CV, c'est personnel. Voici concrètement comment on le protège.</p></div>
       </div>
-      <div class="securite">
+      <div class="securite apparait">
         <ul>
-          <li><b>Aucun mot de passe stocké.</b> Connexion par Google, Apple, ou un code à usage unique envoyé par email (10 minutes, 5 essais).</li>
-          <li><b>Un espace isolé par personne.</b> Ton agent ne voit que ton dossier ; les réponses des recruteurs ne sont livrées qu'à toi.</li>
-          <li><b>Rien en clair qui ne doive l'être.</b> Sessions et codes conservés sous forme d'empreinte chiffrée ; connexion chiffrée (HTTPS).</li>
+          <li><b>Aucun mot de passe stocké</b>Connexion par Google, Apple, ou un code à usage unique (10 minutes, 5 essais).</li>
+          <li><b>Un espace isolé par personne</b>Ton agent ne voit que ton dossier ; les réponses des recruteurs ne sont livrées qu'à toi.</li>
+          <li><b>Connexion chiffrée</b>HTTPS partout ; sessions et codes conservés sous forme d'empreinte, jamais en clair.</li>
         </ul>
         <ul>
-          <li><b>Rien ne part sans toi.</b> Phase de test obligatoire, puis ton accord explicite avant le premier envoi réel.</li>
-          <li><b>Effacement en un clic.</b> « Supprimer mon compte » efface ton CV, tes lettres, ta mémoire et ton compte, définitivement.</li>
-          <li><b>Pas de revente.</b> Tes données servent uniquement à faire tourner ton agent.</li>
+          <li><b>Rien ne part sans toi</b>Phase de test obligatoire, puis ton accord explicite avant le premier envoi réel.</li>
+          <li><b>Effacement en un clic</b>« Supprimer mon compte » efface ton CV, tes lettres, ta mémoire et ton compte.</li>
+          <li><b>Pas de revente</b>Tes données servent uniquement à faire tourner ton agent.</li>
         </ul>
       </div>
     </div>
@@ -141,39 +171,38 @@
 
   <section class="section" id="installer">
     <div class="page">
-      <div class="tete"><span class="mono">06 — Sur ton téléphone</span>
-        <div><h2>Installe-le comme une app, en 10 secondes.</h2>
-          <p>Pas besoin de store : ajoute le site à ton écran d'accueil, il s'ouvre en plein écran comme une application.</p></div>
+      <div class="tete apparait"><span class="mono">06 — Sur ton téléphone</span>
+        <div><h2>Installe-le comme une app. 10 secondes.</h2><p>Pas besoin de store : ajoute le site à ton écran d'accueil, il s'ouvre en plein écran.</p></div>
       </div>
-      <div class="installer">
-        <div class="telephone"><h3> iPhone (Safari)</h3><ol>
-          <li>Ouvre ce site dans <b>Safari</b>.</li>
-          <li>Touche le bouton <kbd>Partager</kbd> (le carré avec une flèche vers le haut).</li>
-          <li>Choisis <kbd>Sur l'écran d'accueil</kbd>, puis <kbd>Ajouter</kbd>.</li></ol></div>
-        <div class="telephone"><h3>🤖 Android (Chrome)</h3><ol>
-          <li>Ouvre ce site dans <b>Chrome</b>.</li>
-          <li>Touche le menu <kbd>⋮</kbd> en haut à droite.</li>
-          <li>Choisis <kbd>Installer l'application</kbd> (ou <kbd>Ajouter à l'écran d'accueil</kbd>).</li></ol></div>
+      <div class="installer apparait">
+        <div class="telephone lumiere"><h3>iPhone · Safari</h3><ol>
+          <li><span>Ouvre ce site dans <b>Safari</b>.</span></li>
+          <li><span>Touche <kbd>Partager</kbd> (le carré avec une flèche).</span></li>
+          <li><span>Choisis <kbd>Sur l'écran d'accueil</kbd> puis <kbd>Ajouter</kbd>.</span></li></ol></div>
+        <div class="telephone lumiere"><h3>Android · Chrome</h3><ol>
+          <li><span>Ouvre ce site dans <b>Chrome</b>.</span></li>
+          <li><span>Touche le menu <kbd>⋮</kbd> en haut à droite.</span></li>
+          <li><span>Choisis <kbd>Installer l'application</kbd>.</span></li></ol></div>
       </div>
     </div>
   </section>
 
   <section class="section faq">
     <div class="page">
-      <div class="tete"><span class="mono">07 — Questions</span><div><h2>Les questions qu'on nous pose.</h2></div></div>
-      <details><summary>Est-ce que je dois configurer une boîte mail ?</summary><p>Non. Les candidatures partent depuis notre adresse d'envoi, à ton nom, et les réponses des recruteurs reviennent dans ton espace (et sur ton email si tu le souhaites). Tu n'as rien à régler.</p></details>
-      <details><summary>Comment je reçois les nouvelles si ce n'est pas une « vraie » app ?</summary><p>Par email : coche « Recevoir par email » dans tes réglages, et tu reçois un récapitulatif (avec les lettres en PDF) dès que ton agent a besoin de toi. Et tout est dans ton espace.</p></details>
-      <details><summary>Il peut envoyer n'importe quoi en mon nom ?</summary><p>Non. Pendant la phase de test, tout arrive chez toi. Ensuite, chaque lettre est relue par un second agent qui vérifie chaque fait contre ton CV ; un contrôle automatique bloque encore les erreurs (mauvais nom d'employeur, chiffre absent de ton CV) juste avant l'envoi.</p></details>
-      <details><summary>Et les sites comme LinkedIn ?</summary><p>On ne remplit jamais automatiquement LinkedIn, Jobat ou StepStone : c'est interdit par leurs conditions. Pour ces offres, ton agent te prépare la lettre et le lien, tu colles et tu envoies.</p></details>
+      <div class="tete apparait"><span class="mono">07 — Questions</span><div><h2>Les questions qu'on nous pose.</h2></div></div>
+      <details><summary>Je dois configurer une boîte mail ?</summary><p>Non. Les candidatures partent depuis notre adresse d'envoi, à ton nom, et les réponses des recruteurs reviennent dans ton espace (et sur ton email si tu veux). Rien à régler.</p></details>
+      <details><summary>Et les offres LinkedIn, Jobat, StepStone ?</summary><p>On ne se connecte jamais à ces sites (leurs règles l'interdisent et ton compte serait en danger). Mais la plupart de leurs offres nous arrivent quand même : par Google Jobs, par les données publiques du Forem et d'EURES, et par tes propres alertes emploi, que tu peux transférer à ton agent. Pour celles-là, il te prépare tout et cherche l'email direct du recruteur.</p></details>
+      <details><summary>Comment je reçois les nouvelles ?</summary><p>Dans ton espace, et par email si tu coches « Recevoir par email » : un récapitulatif avec les lettres en PDF, dès que ton agent a besoin de toi.</p></details>
+      <details><summary>Il peut envoyer n'importe quoi en mon nom ?</summary><p>Non. Pendant la phase de test, tout arrive chez toi. Ensuite, chaque lettre est relue par un second agent qui vérifie chaque fait contre ton CV, et un contrôle automatique bloque encore les erreurs juste avant l'envoi.</p></details>
       <details><summary>Combien ça coûte ?</summary><p>La bêta est gratuite. Chaque agent a un budget d'IA limité par jour, pour que ça reste raisonnable.</p></details>
       <details><summary>Comment je supprime tout ?</summary><p>Réglages → « Supprimer mon compte ». Ton CV, tes lettres, ta mémoire et ton compte sont effacés immédiatement et définitivement.</p></details>
     </div>
   </section>
 
   <section class="appel">
-    <div class="page">
-      <h2>Ton prochain job commence par <span class="italique">une bonne lettre</span>. Laisse-la à ton agent.</h2>
-      <a class="bouton vert" href="app.html">Créer mon espace gratuitement →</a>
+    <div class="page apparait">
+      <h2>Ton prochain job commence par <span class="accent">une bonne lettre</span>. Laisse-la à ton agent.</h2>
+      <a class="bouton vert" href="app.html">Créer mon espace gratuitement <span class="fleche">→</span></a>
     </div>
   </section>
 </main>

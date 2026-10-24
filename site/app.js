@@ -156,6 +156,7 @@ function initApp() {
   ecran("ecran-app");
   $("#qui").textContent = utilisateur.email;
   $("#adresse-test").textContent = utilisateur.adresse_test || utilisateur.email;
+  $("#adresse-agent").textContent = utilisateur.adresse_agent || "—";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
   montrer("discussion");

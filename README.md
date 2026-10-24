@@ -1,5 +1,7 @@
 # Agents Emploi — l'application
 
+> **Tu débutes avec GitHub ?** Lis d'abord [GUIDE.md](GUIDE.md) : où cliquer, quel fichier fait quoi.
+
 Le site (GitHub Pages, gratuit) + le serveur qui fait tourner **un agent par utilisateur** (Agent Avocat,
 Agent Student… et tous ceux qu'on ajoutera).
 
@@ -65,7 +67,7 @@ Le moins cher et le plus simple : un petit serveur Hetzner (CX22, ~4 €/mois, e
    (sslip.io est gratuit : pas de nom de domaine à acheter, HTTPS automatique).
 3. Connecte-toi (`ssh root@203.0.113.7`) puis :
    ```
-   git clone -b claude/optimize-agents-pdf-files-szofvc https://github.com/brrrr999/App-final
+   git clone https://github.com/brrrr999/App-final
    cd App-final/deploiement && cp .env.exemple .env && nano .env      # remplis les valeurs
    docker compose up -d --build
    ```
@@ -91,6 +93,20 @@ domaine et un service d'envoi (Brevo, Amazon SES) pour une adresse plus professi
 - **Apple** : nécessite un compte Apple Developer (99 $/an). Crée un *Services ID* avec « Sign in with Apple »,
   domaine `brrrr999.github.io`, puis mets-le dans `APPLE_CLIENT_ID`. Sans lui, le bouton reste caché.
 - La connexion par **code email** marche toujours, sans rien configurer.
+
+### Combien d'utilisateurs ?
+
+| Partie | 100 utilisateurs | 1 000 utilisateurs |
+|---|---|---|
+| **Site** (GitHub Pages) | ✅ aucun souci | ✅ aucun souci (limite ~100 Go de trafic/mois) |
+| **Serveur** (mode économe) | ✅ CX22, ~4 €/mois, `MAX_AGENTS=6` | ⚠️ CX42 (16 Go), ~17 €/mois, `MAX_AGENTS=30`, `TOURNEE_MIN=60` |
+| **Emails** | ✅ Gmail (~500/jour) | ⚠️ service d'envoi (Brevo, Amazon SES) + nom de domaine, ~10-25 €/mois |
+| **IA (Claude)** | ~10-30 €/jour | ~100-300 €/jour → il faudra un abonnement payant |
+
+Le mode économe (par défaut) garde la mémoire du serveur constante : un agent n'est allumé que quand la personne
+lui parle (il s'éteint après `INACTIF_MIN` minutes) ; le travail de fond (chercher, écrire, envoyer) passe par des
+« tournées » courtes, au plus `MAX_AGENTS` à la fois. Au-delà de ~1 000 utilisateurs : mettre en commun la lecture
+des sources entre utilisateurs qui cherchent la même chose, et plusieurs serveurs.
 
 ### Plus tard : les stores
 

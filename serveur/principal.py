@@ -83,7 +83,8 @@ def _session(u: dict, requete: Request) -> dict:
 
 def _profil(u: dict) -> dict:
     return {"email": u["email"], "nom": u["nom"], "agent": u["agent"], "notif_email": bool(u["notif_email"]),
-            "fournisseur": u["fournisseur"], "adresse_test": u["email"]}
+            "fournisseur": u["fournisseur"], "adresse_test": u["email"],
+            "adresse_agent": courrier.adresse_reponse(u["jeton_reponse"]) if u["jeton_reponse"] else None}
 
 
 # ---------- Public ----------

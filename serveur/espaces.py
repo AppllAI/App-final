@@ -176,7 +176,7 @@ def phase_test(utilisateur_id: str) -> dict:
 
 
 # ---------- Processus des agents ----------
-_processus: dict[str, subprocess.Popen] = {}
+_processus: dict[str, tuple[subprocess.Popen, str]] = {}
 _verrou = threading.Lock()
 
 
@@ -208,38 +208,66 @@ def _chemin_agent(agent: dict) -> Path:
     return p if p.is_absolute() else reglages.agents_dir() / p
 
 
-def demarrer(utilisateur_id: str) -> bool:
-    """Lance (ou relance) l'agent de cet utilisateur. Sans effet s'il tourne déjà."""
+# Mode économe (par défaut) : un agent n'est allumé QUE quand la personne lui parle (il s'éteint seul après
+# INACTIF_MIN minutes) ; le travail de fond passe par des « tournées » courtes, au plus MAX_AGENTS processus à la fois.
+# La mémoire utilisée reste donc la même avec 10 ou 1 000 utilisateurs ; seule la fréquence des tournées baisse.
+def _mode_econome() -> bool:
+    return reglages.env("MODE_ECONOME", "1") != "0"
+
+
+def _max_agents() -> int:
+    return int(reglages.env("MAX_AGENTS", "6"))
+
+
+def _lancer(utilisateur_id: str, genre: str) -> bool:
+    """genre : « conversation » (écoute la personne) ou « tournee » (travail de fond, puis arrêt)."""
     u = base.q1("SELECT * FROM utilisateurs WHERE id=?", utilisateur_id)
     if not u or not u["agent"]:
         return False
     agent = catalogue().get(u["agent"])
     if not agent or not agent.get("disponible", True):
         return False
+    d = dossier(utilisateur_id)
+    with canal(utilisateur_id):
+        pass
+    (d / "boite").mkdir(exist_ok=True)
+    journal = d / "agent.log"
+    if journal.exists() and journal.stat().st_size > 5_000_000:
+        journal.replace(d / "agent.log.1")
+    chemin = _chemin_agent(agent)
+    env = _environnement(dict(u), {**agent, "chemin": chemin})
+    commande = [sys.executable, "-m", agent["module"], "--canal", "app"]
+    if genre == "tournee":
+        commande.append("--tournee")
+    elif _mode_econome():
+        env["QUITTER_APRES_MIN"] = reglages.env("INACTIF_MIN", "10")
+    with open(journal, "ab") as sortie:          # le processus garde sa propre copie du fichier
+        _processus[utilisateur_id] = (subprocess.Popen(commande, cwd=chemin, env=env, stdin=subprocess.DEVNULL,
+                                                       stdout=sortie, stderr=subprocess.STDOUT), genre)
+    return True
+
+
+def demarrer(utilisateur_id: str) -> bool:
+    """La personne parle à son agent : il doit écouter, tout de suite (priorité sur les tournées)."""
     with _verrou:
-        p = _processus.get(utilisateur_id)
+        p, genre = _processus.get(utilisateur_id, (None, None))
         if p and p.poll() is None:
-            return True
-        d = dossier(utilisateur_id)
-        with canal(utilisateur_id):
-            pass
-        (d / "boite").mkdir(exist_ok=True)
-        journal = d / "agent.log"
-        if journal.exists() and journal.stat().st_size > 5_000_000:
-            journal.replace(d / "agent.log.1")
-        chemin = _chemin_agent(agent)
-        env = _environnement(dict(u), {**agent, "chemin": chemin})
-        with open(journal, "ab") as sortie:          # le processus garde sa propre copie du fichier
-            _processus[utilisateur_id] = subprocess.Popen(
-                [sys.executable, "-m", agent["module"], "--canal", "app"], cwd=chemin, env=env,
-                stdin=subprocess.DEVNULL, stdout=sortie, stderr=subprocess.STDOUT)
-        base.evenement(f"agent {u['agent']} démarré", utilisateur_id)
-        return True
+            if genre == "conversation":
+                return True
+            p.terminate()                # une tournée en cours cède la place : la conversation fait le même travail
+            try:
+                p.wait(10)
+            except subprocess.TimeoutExpired:
+                p.kill()
+        ok = _lancer(utilisateur_id, "conversation")
+    if ok:
+        base.evenement("agent démarré (conversation)", utilisateur_id)
+    return ok
 
 
 def arreter(utilisateur_id: str):
     with _verrou:
-        p = _processus.pop(utilisateur_id, None)
+        p, _ = _processus.pop(utilisateur_id, (None, None))
     if p and p.poll() is None:
         p.terminate()
         try:
@@ -249,7 +277,7 @@ def arreter(utilisateur_id: str):
 
 
 def en_marche(utilisateur_id: str) -> bool:
-    p = _processus.get(utilisateur_id)
+    p, _ = _processus.get(utilisateur_id, (None, None))
     return bool(p and p.poll() is None)
 
 
@@ -259,13 +287,38 @@ def arreter_tout():
 
 
 def surveiller():
-    """Toutes les minutes : chaque utilisateur qui a choisi un agent a son agent en marche (relancé s'il s'est arrêté)."""
-    for u in base.q("SELECT id FROM utilisateurs WHERE agent IS NOT NULL"):
-        if not en_marche(u["id"]):
-            try:
-                demarrer(u["id"])
-            except Exception as e:
-                base.evenement(f"agent impossible à démarrer : {type(e).__name__}", u["id"])
+    """Toutes les minutes. Mode économe : lance les tournées dues (la plus en retard d'abord) dans la limite de
+    MAX_AGENTS processus. Sinon : un agent allumé en permanence par utilisateur (relancé s'il s'arrête)."""
+    with _verrou:
+        for uid in [k for k, (p, _) in _processus.items() if p.poll() is not None]:
+            del _processus[uid]
+    utilisateurs = [u["id"] for u in base.q("SELECT id FROM utilisateurs WHERE agent IS NOT NULL")]
+    if not _mode_econome():
+        for uid in utilisateurs:
+            if not en_marche(uid):
+                try:
+                    demarrer(uid)
+                except Exception as e:
+                    base.evenement(f"agent impossible à démarrer : {type(e).__name__}", uid)
+        return
+    intervalle = int(reglages.env("TOURNEE_MIN", "30")) * 60
+    dues = sorted((float(base.kv_get(f"tournee_{uid}", 0)), uid) for uid in utilisateurs
+                  if not en_marche(uid) and time.time() - float(base.kv_get(f"tournee_{uid}", 0)) > intervalle)
+    libres = _max_agents() - len(_processus)
+    for _, uid in dues[:max(0, libres)]:
+        try:
+            with _verrou:
+                _lancer(uid, "tournee")
+            base.kv_set(f"tournee_{uid}", time.time())
+        except Exception as e:
+            base.evenement(f"tournée impossible : {type(e).__name__}", uid)
+
+
+def charge() -> dict:
+    """Pour le suivi : combien d'agents tournent, combien d'utilisateurs attendent leur tournée."""
+    actifs = [g for p, g in _processus.values() if p.poll() is None]
+    return {"conversations": actifs.count("conversation"), "tournees": actifs.count("tournee"),
+            "max": _max_agents(), "utilisateurs": base.q1("SELECT COUNT(*) AS n FROM utilisateurs")["n"]}
 
 
 def choisir_agent(utilisateur_id: str, agent_id: str):

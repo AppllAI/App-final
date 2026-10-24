@@ -6,7 +6,7 @@
   <title>Mon espace — Agents Emploi</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https: http://localhost:8000; frame-src https://accounts.google.com/gsi/ https://appleid.apple.com; base-uri 'self'; form-action 'self'">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#1f4d3a">
+  <meta name="theme-color" content="#0a0a0c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Agents Emploi">
   <link rel="manifest" href="manifest.webmanifest">
@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icones/icone-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -79,6 +79,9 @@
         <div class="reglage"><label class="case"><input type="checkbox" id="notif">
           <span><b>Recevoir par email</b><br><small>Quand ton agent t'écrit et que tu n'es pas sur le site, tu reçois un récapitulatif par email (lettres en PDF jointes).</small></span></label></div>
         <div class="reglage"><b>Adresse des tests</b><p class="petit-texte serre">Pendant la phase de test, les candidatures arrivent sur <b id="adresse-test"></b>, jamais chez un recruteur.</p></div>
+        <div class="reglage"><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
+          (LinkedIn, Jobat, StepStone, Indeed…) : ton agent lit chaque offre et s'en occupe. Les recruteurs y répondent aussi.</p>
+          <span class="code-agent" id="adresse-agent"></span></div>
         <div class="reglage"><b>Ton agent</b><p class="petit-texte serre" id="agent-actuel"></p>
           <button class="bouton clair petit" type="button" id="changer-agent">Changer d'agent</button></div>
         <div class="reglage"><button class="bouton clair petit" type="button" id="deconnexion">Me déconnecter</button></div>
