@@ -1,11 +1,11 @@
-# Agents Emploi — le site
+# Applai — le site
 
 > **Tu débutes avec GitHub ?** Lis d'abord [GUIDE.md](GUIDE.md) : où cliquer, quel fichier fait quoi.
 
 Ce dépôt est **public** et ne contient que le site (publié gratuitement par GitHub Pages) :
-**https://brrrr999.github.io/App-final/**
+**https://appllai.github.io/App-final/**
 
-Le moteur des agents, les métiers et le serveur sont dans le dépôt **privé** `brrrr999/Agent`.
+Le moteur des agents, les métiers et le serveur sont dans le dépôt **privé** `AppllAI/Agent`.
 
 ```
  Téléphone / ordinateur                      Serveur Oracle (dépôt privé « Agent »)
