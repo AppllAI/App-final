@@ -4,7 +4,7 @@
 
 | Mot | En clair |
 |---|---|
-| **Dépôt** (*repository*) | Un dossier de projet sur GitHub. Tu en as 3 : `App-final` (l'application), `Agent-avocat`, `agent-student-`. |
+| **Dépôt** (*repository*) | Un dossier de projet sur GitHub. `App-final` = le site (public) ; `Agent` = moteur, agents et serveur (privé). `Agent-avocat` et `agent-student-` sont les anciennes versions, à archiver. |
 | **Branche** (*branch*) | Une version parallèle du dossier. `main` = la version officielle. Claude travaille sur une autre branche (`claude/optimize-agents-pdf-files-szofvc`) pour ne rien casser sans ton accord. |
 | **Pull Request (PR)** | Une demande : « voici mes changements, tu veux les mettre dans `main` ? ». On peut tout relire avant. |
 | **Merge** (fusionner) | Tu acceptes la PR : les changements entrent dans `main`. |
@@ -56,39 +56,10 @@ Claude ne peut PAS cliquer à ta place dans **Settings** (Pages, accès) : c'est
 
 ## 6. Quel fichier fait quoi
 
-### App-final (l'application)
-| Fichier | Rôle |
-|---|---|
-| `site/index.html` | La page d'accueil (ce que voient les visiteurs) |
-| `site/app.html` + `site/app.js` | L'espace personnel : connexion, discussion, candidatures, phase de test, réglages |
-| `site/styles.css` | Tout le design (couleurs, polices, animations) — l'accent mauve est `--accent` en haut du fichier |
-| `site/config.js` | **L'adresse du serveur** : à remplir quand il sera en ligne (vide = mode démo) |
-| `site/demo.js` | Les fausses réponses du mode démo |
-| `serveur/principal.py` | Le serveur : toutes les adresses de l'API |
-| `serveur/identite.py` | Connexion (Google, Apple, code email) et sécurité des sessions |
-| `serveur/espaces.py` | Un espace isolé par utilisateur et le lancement de SON agent |
-| `serveur/courrier.py` | Emails : codes de connexion, notifications, réponses des recruteurs |
-| `serveur/catalogue.yaml` | **La liste des agents** : ajouter un métier = ajouter un bloc ici |
-| `deploiement/` | Tout pour installer le serveur (Docker, HTTPS, modèle de réglages `.env.exemple`) |
-| `tests/` | Les tests automatiques |
-| `.github/workflows/` | Les robots : publication du site, tests |
-
-### Agent-avocat / agent-student- (les agents)
-| Fichier | Rôle |
-|---|---|
-| `metier.py` | **Ce qui est propre au métier** (sources spécialisées…) |
-| `prompts/*.md` | Les consignes données à l'IA, en français (le « savoir-faire » du métier) |
-| `agents/connecteurs.py` | **Le moteur commun** : EURES, Forem, pages carrières, alertes email |
-| `agents/sources.py` | Organise toutes les sources et la recherche web |
-| `agents/redacteur.py` | Écrit les lettres et les fait vérifier par le Juge |
-| `agents/phase_test.py` | La phase de test (note sur 20, 2 tests, ton accord) |
-| `memoire.py` | La mémoire longue (carnet de bord, souvenirs) |
-| `pdf.py` | La mise en page des lettres et rapports en PDF |
-| `canaux/app.py` | Le branchement de l'agent sur l'application |
+Voir le tableau du [README](README.md) pour le site, et le README du dépôt privé `Agent` pour le moteur et le serveur.
 
 ## 7. Créer l'agent d'un nouveau métier
 
-1. Demande à Claude : « crée l'agent Santé à partir d'Agent-avocat ». Il créera le dépôt (ou te dira de le créer :
-   bouton **+** en haut à droite de GitHub → **New repository**), changera `metier.py`, les `prompts/`, les mots de la
-   Garde et l'exemple d'objectif.
-2. Il ajoutera le bloc dans `serveur/catalogue.yaml`. Après le redéploiement du serveur, l'agent apparaît sur le site.
+1. Demande à Claude : « crée l'agent Santé ». Dans le dépôt `Agent`, il copie `metiers/avocat/` en `metiers/sante/`
+   et adapte `metier.py` et les `prompts/`. Le moteur ne change pas.
+2. Il ajoute le bloc dans `serveur/catalogue.yaml`. La nuit suivante, le serveur se met à jour et l'agent apparaît sur le site.

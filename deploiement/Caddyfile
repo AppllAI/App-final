@@ -1,5 +1,0 @@
-# DOMAINE_API vient de .env (ex. api.203-0-113-7.sslip.io : gratuit, aucun nom de domaine à acheter)
-{$DOMAINE_API} {
-	encode gzip
-	reverse_proxy serveur:8000
-}

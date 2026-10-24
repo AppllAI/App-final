@@ -49,14 +49,15 @@ window.DEMO = (() => {
   return {
     async appel(chemin, { methode = "GET", corps, fichier } = {}) {
       await new Promise((r) => setTimeout(r, 250));
-      if (chemin === "/api/sante") return { ok: true, google: false, apple: false };
+      if (chemin === "/api/sante") return { ok: true, google: true, google_client_id: "demo" };
       if (chemin === "/api/agents") return AGENTS_SECOURS;
-      if (chemin === "/api/auth/code") return { ok: true };
-      if (chemin === "/api/auth/code/verifier") {
-        etat.utilisateur = { email: corps.email, nom: null, agent: null, notif_email: true, fournisseur: "email", adresse_test: corps.email, adresse_agent: "agents.emploi+demo1234@gmail.com" };
+      if (chemin === "/api/auth/google") {
+        etat.utilisateur = { email: "camille.demo@gmail.com", nom: "Camille", agent: null, notif_email: true, fournisseur: "google",
+          adresse_test: "camille.demo@gmail.com", gmail_ok: true, adresse_agent: null };
         return { jeton: "demo", utilisateur: etat.utilisateur };
       }
-      if (!etat.utilisateur) etat.utilisateur = { email: "toi@exemple.be", agent: null, notif_email: true, adresse_test: "toi@exemple.be" };
+      if (!etat.utilisateur) etat.utilisateur = { email: "camille.demo@gmail.com", agent: null, notif_email: true,
+        adresse_test: "camille.demo@gmail.com", gmail_ok: true };
       if (chemin === "/api/moi" && methode === "GET") return { ...etat.utilisateur, agent_en_marche: true };
       if (chemin === "/api/moi" && methode === "PATCH") { etat.utilisateur.notif_email = corps.notif_email; return { ok: true }; }
       if (chemin === "/api/moi" && methode === "DELETE") { etat.utilisateur = null; return { ok: true }; }
