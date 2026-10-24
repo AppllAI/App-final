@@ -57,7 +57,12 @@ Oui : on garde **un dépôt par agent**, et on les branche tous au même serveur
 3. Le site apparaît à **https://brrrr999.github.io/App-final/** (onglet *Actions* pour suivre).
    Tant que le serveur n'existe pas, l'espace fonctionne en **mode démo** (réponses fictives).
 
-### 2. Le serveur (~4 €/mois) — 20 minutes
+### 2. Le serveur — gratuit sur Oracle Cloud
+
+**Recommandé : [ORACLE.md](ORACLE.md)** (machine « Always Free », 2 cœurs / 12 Go, installation automatique en
+collant `deploiement/oracle.sh`). Autre possibilité ci-dessous : un petit serveur Hetzner (~4 €/mois).
+
+### 2 bis. Le serveur chez Hetzner (~4 €/mois) — 20 minutes
 
 GitHub Pages n'héberge que des pages : les agents, eux, doivent tourner jour et nuit sur un vrai serveur.
 Le moins cher et le plus simple : un petit serveur Hetzner (CX22, ~4 €/mois, en Allemagne = données dans l'UE).
