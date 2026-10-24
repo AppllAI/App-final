@@ -1,0 +1,49 @@
+# Catalogue des agents de la plateforme.
+# Ajouter un métier = créer son dépôt d'agent (même moteur que Agent-avocat) + ajouter un bloc ici.
+# Le serveur télécharge chaque dépôt au déploiement (deploiement/Dockerfile) et lance un agent par utilisateur.
+#
+# Contrat d'un agent (ce que le serveur attend de lui) :
+#   python -m <module> --canal app       avec AGENT_RACINE = dossier de l'utilisateur
+#   variables lues : EMAIL_TEST, REPONSE_A, BOITE_DOSSIER, TEST_OBLIGATOIRE, BUDGET_JOUR_EUR, SIMULATION
+
+agents:
+  avocat:
+    nom: Agent Avocat
+    titre: Stage, juriste, collaborateur en Belgique
+    emoji: "⚖️"
+    couleur: "#1f4d3a"
+    description: >-
+      Cherche les offres juridiques (LexGO, Indeed, barreaux, cabinets), écrit une lettre sur mesure pour chacune,
+      vérifiée fait par fait, et contacte aussi les cabinets qui ne publient pas leurs offres.
+    exemples: ["Stagiaire avocat à Bruxelles", "Juriste en droit immobilier", "Paralegal corporate"]
+    module: agent_avocat
+    dossier: Agent-avocat                # dans AGENTS_DIR
+    depot: https://github.com/brrrr999/Agent-avocat
+    branche: claude/optimize-agents-pdf-files-szofvc
+    disponible: true
+
+  student:
+    nom: Agent Student
+    titre: Jobs étudiants partout en Belgique
+    emoji: "🎒"
+    couleur: "#c2552d"
+    description: >-
+      Surveille Student.be, StudentJob, Indeed et les enseignes, écrit un message clair avec tes disponibilités
+      exactes, et postule pendant que tu étudies.
+    exemples: ["Vendeur·se le samedi", "Serveur·se en soirée", "Job d'été en festival"]
+    module: agent_student
+    dossier: agent-student-
+    depot: https://github.com/brrrr999/agent-student-
+    branche: claude/optimize-agents-pdf-files-szofvc
+    disponible: true
+
+  infirmier:
+    nom: Agent Santé
+    titre: Infirmier·e, aide-soignant·e
+    emoji: "🩺"
+    couleur: "#2d5f8a"
+    description: Bientôt disponible.
+    exemples: []
+    module: agent_sante
+    dossier: agent-sante
+    disponible: false

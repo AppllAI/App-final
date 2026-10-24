@@ -1,0 +1,5 @@
+donnees/
+agents/
+.env
+__pycache__/
+*.pyc

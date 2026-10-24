@@ -1,0 +1,16 @@
+{
+  "name": "Agents Emploi",
+  "short_name": "Agents Emploi",
+  "description": "Ton agent cherche, écrit et postule pour toi.",
+  "lang": "fr",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f0e6",
+  "theme_color": "#1f4d3a",
+  "icons": [
+    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

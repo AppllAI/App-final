@@ -1,0 +1,15 @@
+# Sur le serveur : cp .env.exemple .env (et remplis-le), puis : docker compose up -d --build
+services:
+  serveur:
+    build: { context: .., dockerfile: deploiement/Dockerfile }
+    env_file: .env
+    volumes: [donnees:/donnees]          # toutes les données des utilisateurs (à sauvegarder)
+    restart: unless-stopped
+    expose: ["8000"]
+  caddy:                                 # HTTPS automatique (certificat Let's Encrypt gratuit)
+    image: caddy:2
+    ports: ["80:80", "443:443"]
+    volumes: [./Caddyfile:/etc/caddy/Caddyfile:ro, caddy:/data]
+    env_file: .env
+    restart: unless-stopped
+volumes: { donnees: {}, caddy: {} }
