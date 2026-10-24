@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mon espace — Agents Emploi</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client https://appleid.cdn-apple.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https: http://localhost:8000; frame-src https://accounts.google.com/gsi/ https://appleid.apple.com; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https: http://localhost:8000; frame-src https://accounts.google.com/gsi/; base-uri 'self'; form-action 'self'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#0a0a0c">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,31 +20,41 @@
 <body>
 <div class="bandeau" id="bandeau-demo" hidden>Mode démo : le serveur n'est pas encore branché, les réponses sont fictives et rien n'est envoyé. <a href="./">Retour à l'accueil</a></div>
 
-<!-- Connexion -->
+<!-- Connexion : Google uniquement -->
 <section class="ecran" id="ecran-connexion" hidden>
   <div class="boite">
     <a class="logo" href="./"><span class="logo-marque">A</span>Agents Emploi</a>
     <h1>Ton espace</h1>
-    <p class="sous">Connecte-toi ou crée ton compte en un geste. Aucun mot de passe à retenir.</p>
-    <div class="fournisseurs">
-      <div id="bouton-google"></div>
-      <button class="bouton clair" id="bouton-apple" type="button" hidden> Continuer avec Apple</button>
+    <p class="sous">Un clic avec ton compte Google. Tes candidatures partiront de <b>ton</b> adresse Gmail.</p>
+    <button class="bouton bouton-google" id="bouton-google" type="button"><span class="g" aria-hidden="true">G</span>Continuer avec Google</button>
+    <div class="apercu-google" aria-hidden="true">
+      <span class="mono">Sur l'écran de Google, laisse cochée :</span>
+      <div class="g-ligne"><span class="g-case"></span><b>Envoyer des e-mails en votre nom</b></div>
     </div>
-    <div class="separateur" id="sep-fournisseurs">ou avec ton email</div>
-    <form id="form-email">
-      <div class="champ"><label for="email">Adresse email</label>
-        <input type="email" id="email" autocomplete="email" inputmode="email" required placeholder="prenom.nom@gmail.com"></div>
-      <button class="bouton large" type="submit">Recevoir un code</button>
-    </form>
-    <form id="form-code" hidden>
-      <div class="champ"><label for="code">Code reçu par email</label>
-        <input class="code" type="text" id="code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••"></div>
-      <button class="bouton" type="submit">Me connecter</button>
-      <button class="bouton clair petit" type="button" id="autre-email">Changer d'email</button>
-    </form>
     <p class="erreur" id="erreur-connexion" role="alert"></p>
-    <p class="petit-texte">En continuant, tu acceptes notre <a href="confidentialite.html">politique de confidentialité</a>.
-      Tes données ne servent qu'à faire tourner ton agent et se suppriment en un clic.</p>
+    <p class="petit-texte">On demande seulement le droit d'<b>envoyer</b> : on ne lit jamais tes emails. En continuant, tu acceptes notre
+      <a href="confidentialite.html">politique de confidentialité</a>.</p>
+  </div>
+</section>
+
+<!-- Autorisation d'envoi manquante -->
+<section class="ecran" id="ecran-autorisation" hidden>
+  <div class="boite">
+    <a class="logo" href="./"><span class="logo-marque">A</span>Agents Emploi</a>
+    <h1>Dernière étape</h1>
+    <p class="sous">Ton agent a besoin de pouvoir envoyer tes candidatures <b>depuis ton Gmail</b>.</p>
+    <ul class="liste-points">
+      <li>Les recruteurs voient ta vraie adresse, pas une adresse inconnue.</li>
+      <li>Les mails envoyés apparaissent dans tes « Envoyés ».</li>
+      <li>Rien ne part chez un recruteur avant la phase de test et ton accord.</li>
+    </ul>
+    <button class="bouton bouton-google" id="bouton-autoriser" type="button"><span class="g" aria-hidden="true">G</span>Autoriser l'envoi depuis mon Gmail</button>
+    <div class="apercu-google" aria-hidden="true">
+      <span class="mono">Coche bien la case :</span>
+      <div class="g-ligne"><span class="g-case"></span><b>Envoyer des e-mails en votre nom</b></div>
+    </div>
+    <p class="erreur" id="erreur-autorisation" role="alert"></p>
+    <button class="bouton clair petit" type="button" id="deconnexion-autorisation">Utiliser un autre compte</button>
   </div>
 </section>
 
@@ -78,9 +88,11 @@
       <div class="reglages">
         <div class="reglage"><label class="case"><input type="checkbox" id="notif">
           <span><b>Recevoir par email</b><br><small>Quand ton agent t'écrit et que tu n'es pas sur le site, tu reçois un récapitulatif par email (lettres en PDF jointes).</small></span></label></div>
-        <div class="reglage"><b>Adresse des tests</b><p class="petit-texte serre">Pendant la phase de test, les candidatures arrivent sur <b id="adresse-test"></b>, jamais chez un recruteur.</p></div>
-        <div class="reglage"><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
-          (LinkedIn, Jobat, StepStone, Indeed…) : ton agent lit chaque offre et s'en occupe. Les recruteurs y répondent aussi.</p>
+        <div class="reglage"><b>Envoi depuis ton Gmail</b><p class="petit-texte serre">Tes candidatures partent de <b id="adresse-envoi"></b>.
+          Pendant la phase de test, elles arrivent sur cette même adresse, jamais chez un recruteur.</p>
+          <span class="etiquette vert" id="etat-gmail">Autorisé</span></div>
+        <div class="reglage" id="reglage-adresse-agent" hidden><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
+          (LinkedIn, Jobat, StepStone, Indeed…) et les réponses des recruteurs : ton agent s'en occupe.</p>
           <span class="code-agent" id="adresse-agent"></span></div>
         <div class="reglage"><b>Ton agent</b><p class="petit-texte serre" id="agent-actuel"></p>
           <button class="bouton clair petit" type="button" id="changer-agent">Changer d'agent</button></div>

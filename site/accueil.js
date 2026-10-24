@@ -1,4 +1,4 @@
-// Page d'accueil : la liste des agents vient du serveur (catalogue), sinon de cette liste de secours.
+// Page d'accueil : parcours animé au défilement, liste des agents, avis, compteurs.
 "use strict";
 const AGENTS_SECOURS = [
   { id: "avocat", nom: "Agent Avocat", titre: "Stage, juriste, collaborateur en Belgique", emoji: "⚖️", couleur: "#1f4d3a",
@@ -10,6 +10,10 @@ const AGENTS_SECOURS = [
   { id: "infirmier", nom: "Agent Santé", titre: "Infirmier·e, aide-soignant·e", emoji: "🩺", couleur: "#2d5f8a",
     description: "Bientôt disponible.", exemples: [], disponible: false },
 ];
+
+// Les avis RÉELS des bêta-testeurs, à ajouter ici (jamais d'avis inventés) :
+//   { texte: "…", nom: "Prénom", agent: "Agent Avocat", note: 17 }
+const AVIS = [];
 
 function carteAgent(a, bouton) {
   const el = document.createElement(bouton ? "button" : "article");
@@ -41,24 +45,33 @@ async function chargerAgents() {
 const zone = document.getElementById("liste-agents");
 if (zone) chargerAgents().then((liste) => liste.forEach((a) => zone.append(carteAgent(a, false))));
 
-// ---------- Animations et interactions de la page d'accueil (légères, désactivées si « réduire les animations ») ----------
+// ---------- Avis ----------
+const zoneAvis = document.getElementById("liste-avis");
+if (zoneAvis) {
+  const ajoute = (parent, tag, cls, texte) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = texte; parent.append(e); return e; };
+  if (!AVIS.length) {
+    const v = ajoute(zoneAvis, "div", "avis-vide lumiere", "");
+    ajoute(v, "span", "mono", "Bêta en cours");
+    ajoute(v, "h3", "", "Les premiers avis arrivent bientôt.");
+    ajoute(v, "p", "", "Teste ton agent, note-le sur 20 : ton avis peut être le premier publié ici.");
+    const a = ajoute(v, "a", "bouton clair petit", "Essayer gratuitement →"); a.href = "app.html";
+  }
+  AVIS.forEach((x) => {
+    const c = ajoute(zoneAvis, "figure", "carte-avis lumiere", "");
+    if (x.note) ajoute(c, "span", "note-avis", `${x.note}/20`);
+    ajoute(c, "blockquote", "", `« ${x.texte} »`);
+    ajoute(c, "figcaption", "", `${x.nom}${x.agent ? " · " + x.agent : ""}`);
+  });
+}
+
+// ---------- Animations (désactivées si « réduire les animations ») ----------
 const calme = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Apparition des sections au défilement
 const observateur = "IntersectionObserver" in window && new IntersectionObserver((entrees) => {
   entrees.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("visible"); observateur.unobserve(e.target); } });
 }, { threshold: 0.12 });
 document.querySelectorAll(".apparait").forEach((el) => (observateur ? observateur.observe(el) : el.classList.add("visible")));
 
-// Halo qui suit la souris dans le héros, et lumière sur les cartes
-const heros = document.getElementById("heros");
-if (heros && !calme) {
-  heros.addEventListener("pointermove", (e) => {
-    const r = heros.getBoundingClientRect();
-    heros.style.setProperty("--hx", `${e.clientX - r.left}px`);
-    heros.style.setProperty("--hy", `${e.clientY - r.top}px`);
-  });
-}
 document.addEventListener("pointermove", (e) => {
   const carte = e.target.closest && e.target.closest(".lumiere");
   if (!carte) return;
@@ -67,40 +80,75 @@ document.addEventListener("pointermove", (e) => {
   carte.style.setProperty("--y", `${e.clientY - r.top}px`);
 });
 
-// Le « journal » de l'agent qui s'écrit ligne par ligne, en boucle
-const journal = document.getElementById("journal");
-if (journal) {
-  const lignes = [...journal.children];
-  if (calme) lignes.forEach((l) => l.classList.add("vu"));
-  else {
-    let i = 0;
-    const suivante = () => {
-      if (i < lignes.length) { lignes[i++].classList.add("vu"); setTimeout(suivante, i === lignes.length - 1 ? 1400 : 650); }
-      else setTimeout(() => { lignes.forEach((l) => l.classList.remove("vu")); i = 0; setTimeout(suivante, 600); }, 5200);
-    };
-    setTimeout(suivante, 500);
-  }
-}
+// ---------- Le parcours : plus on descend, plus l'histoire avance ----------
+const parcours = document.getElementById("parcours");
+const scene = document.getElementById("scene");
+if (parcours && scene) {
+  const legendes = [...document.querySelectorAll("#legendes li")];
+  const N = legendes.length;
+  const points = document.getElementById("points");
+  legendes.forEach(() => points.append(document.createElement("i")));
+  const $ = (id) => document.getElementById(id);
+  const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+  let etapeAffichee = -1;
 
-// La note de démonstration (phase de test)
-const curseur = document.getElementById("essai-curseur");
-if (curseur) {
-  const maj = () => {
-    const n = +curseur.value, ok = n >= 15;
-    document.getElementById("essai-valeur").textContent = n;
-    const remplissage = document.getElementById("remplissage");
-    remplissage.style.width = `${(n / 20) * 100}%`;
-    remplissage.classList.toggle("ok", ok);
-    const v = document.getElementById("essai-verdict");
-    v.classList.toggle("ok", ok);
-    v.textContent = ok ? "→ Feu vert. Après le 2e test, il te demande ton accord avant d'écrire aux recruteurs."
-                       : "→ Il retient tes remarques, réécrit les lettres et t'envoie un nouveau test.";
+  // Ce qui suit le doigt À L'INTÉRIEUR d'une étape (k = 0 → 1)
+  const animer = (etape, k) => {
+    scene.style.setProperty("--k", k.toFixed(3));
+    if (etape === 2) $("offres-lues").textContent = Math.round(1284 * ease(k * 1.4)).toLocaleString("fr-BE");
+    if (etape === 6) { const n = Math.round(12 * ease(k * 1.5)); $("note-1").textContent = n; $("jauge-1").style.width = `${n * 5}%`; }
+    if (etape === 7) {
+      const n = Math.round(16 * ease(k * 1.5)); $("note-2").textContent = n; $("jauge-2").style.width = `${n * 5}%`;
+      $("jauge-2").classList.toggle("ok", n >= 15); $("feu").classList.toggle("allume", n >= 15);
+    }
   };
-  curseur.addEventListener("input", maj);
-  maj();
+
+  const changer = (etape) => {
+    if (etape === etapeAffichee) return;
+    etapeAffichee = etape;
+    scene.dataset.etape = String(etape);
+    legendes.forEach((l, i) => l.classList.toggle("actif", i === etape));
+    [...points.children].forEach((p, i) => p.classList.toggle("fait", i <= etape));
+    $("compteur-etape").textContent = `${String(etape + 1).padStart(2, "0")}/${String(N).padStart(2, "0")}`;
+  };
+
+  const surDefilement = () => {
+    const r = parcours.getBoundingClientRect();
+    const total = parcours.offsetHeight - window.innerHeight;
+    const p = Math.min(0.9999, Math.max(0, -r.top / Math.max(1, total)));
+    const position = p * N;
+    const etape = Math.floor(position);
+    changer(etape);
+    animer(etape, position - etape);
+    $("barre-avancee").style.transform = `scaleX(${p})`;
+    document.body.classList.toggle("apres-parcours", r.bottom < window.innerHeight * 0.6);
+  };
+
+  if (calme) {
+    parcours.classList.add("statique");          // tout s'affiche en liste, sans animation liée au défilement
+    changer(N - 1);
+    animer(2, 1); animer(6, 1); animer(7, 1);
+  } else {
+    let attente = false;
+    window.addEventListener("scroll", () => {
+      if (attente) return;
+      attente = true;
+      requestAnimationFrame(() => { attente = false; surDefilement(); });
+    }, { passive: true });
+    window.addEventListener("resize", surDefilement);
+    surDefilement();
+  }
+
+  // Toucher une légende ou un point → aller à cette étape
+  const allerA = (i) => {
+    const total = parcours.offsetHeight - window.innerHeight;
+    window.scrollTo({ top: parcours.offsetTop + total * ((i + 0.35) / N), behavior: calme ? "auto" : "smooth" });
+  };
+  legendes.forEach((l, i) => l.addEventListener("click", () => allerA(i)));
+  [...points.children].forEach((p, i) => p.addEventListener("click", () => allerA(i)));
 }
 
-// Compteurs
+// ---------- Compteurs ----------
 document.querySelectorAll("[data-compte]").forEach((el) => {
   const cible = +el.dataset.compte, suffixe = el.dataset.suffixe || "";
   const ecrire = (v) => (el.textContent = Math.round(v).toLocaleString("fr-BE") + suffixe);

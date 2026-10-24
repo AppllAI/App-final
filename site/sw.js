@@ -1,6 +1,6 @@
 // Service worker : le site s'ouvre instantanément (même hors ligne pour l'interface).
 // Les appels à l'API ne sont JAMAIS mis en cache (données personnelles).
-const VERSION = "ae-v2";
+const VERSION = "ae-v3";
 const FICHIERS = ["./", "index.html", "app.html", "styles.css", "config.js", "accueil.js", "demo.js", "app.js",
   "confidentialite.html", "manifest.webmanifest", "icones/icone.svg", "icones/icone-192.png"];
 

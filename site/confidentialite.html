@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Confidentialité — Agents Emploi</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:">
+  <meta name="description" content="Politique de confidentialité d'Agents Emploi : données conservées, utilisation de Gmail (envoi uniquement), droits.">
   <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap">
   <link rel="stylesheet" href="styles.css">
@@ -14,12 +15,16 @@
   <nav class="nav"><a class="bouton petit" href="app.html">Mon espace</a></nav></div></header>
 <main class="page section faq">
   <div class="tete"><span class="mono">Confidentialité</span><div><h2>Ce qu'on garde, pourquoi, et comment tout effacer.</h2>
-    <p>Version bêta — dernière mise à jour : octobre 2026.</p></div></div>
-  <details open><summary>Ce que nous conservons</summary><p>Ton adresse email (et ton nom si Google ou Apple nous le donne) ; ton CV et la fiche profil qu'en tire ton agent ; ce que tu cherches ; les offres trouvées, les lettres écrites et les emails échangés avec les recruteurs pour TES candidatures ; vos conversations et la mémoire de ton agent (résumés et préférences).</p></details>
+    <p>Version bêta — dernière mise à jour : 24 octobre 2026.</p></div></div>
+  <details open><summary>Ce que nous conservons</summary><p>Ton adresse Gmail et ton nom (donnés par Google à la connexion) ; ton CV et la fiche profil qu'en tire ton agent ; ce que tu cherches ; les offres trouvées, les lettres écrites et les candidatures envoyées pour TOI ; vos conversations et la mémoire de ton agent (résumés et préférences) ; l'autorisation d'envoi Gmail, chiffrée.</p></details>
+  <details open><summary>Ton compte Google et Gmail</summary><p>À la connexion, nous demandons à Google : ton identité (adresse email, nom) et la permission <b>gmail.send</b>, qui permet uniquement d'<b>envoyer</b> des emails depuis ton adresse. Nous ne pouvons pas lire, chercher, modifier ni supprimer tes emails.</p>
+    <p>Cette permission sert à une seule chose : envoyer les candidatures que ton agent a préparées — d'abord vers ta propre adresse pendant la phase de test, puis vers les recruteurs une fois que tu as donné ton accord — et, si tu l'as choisi, les récapitulatifs de ton agent vers toi-même.</p>
+    <p>L'autorisation est gardée chiffrée sur notre serveur et n'est jamais transmise à l'agent ni à un tiers. Tu peux la retirer à tout moment : Réglages → « Supprimer mon compte » (nous la révoquons chez Google), ou directement sur myaccount.google.com → Sécurité → Applications tierces.</p>
+    <p>L'utilisation et le transfert à toute autre application des informations reçues des API Google respecteront les <a href="https://developers.google.com/terms/api-services-user-data-policy">Règles relatives aux données utilisateur des services API Google</a>, y compris les exigences d'utilisation limitée. Les données Google ne servent jamais à la publicité, ne sont jamais vendues et ne servent pas à entraîner des modèles d'IA.</p></details>
   <details open><summary>Pourquoi</summary><p>Uniquement pour faire tourner ton agent : chercher, écrire, postuler, suivre les réponses, et se souvenir de ce que tu lui as dit. Pas de publicité, pas de revente, pas de partage avec des tiers, sauf les candidatures que TU as autorisées (envoyées aux employeurs).</p></details>
-  <details open><summary>Qui traite tes données</summary><p>Notre serveur (hébergé dans l'Union européenne si possible) ; Anthropic (l'IA Claude) traite le texte nécessaire pour lire ton CV et écrire tes lettres ; notre fournisseur d'email transporte les emails. Google ou Apple, seulement si tu choisis de te connecter avec eux.</p></details>
-  <details open><summary>Sécurité</summary><p>Connexions chiffrées (HTTPS) ; aucun mot de passe stocké ; sessions et codes conservés sous forme d'empreinte ; un espace isolé par utilisateur ; journal des connexions.</p></details>
-  <details open><summary>Tes droits</summary><p>Tu peux tout supprimer à tout moment : Réglages → « Supprimer mon compte » efface immédiatement ton compte, ton CV, tes lettres et la mémoire de ton agent. Pour toute question ou demande d'accès à tes données, écris-nous à l'adresse indiquée dans les emails de l'application.</p></details>
+  <details open><summary>Qui traite tes données</summary><p>Notre serveur (Oracle Cloud, Union européenne) ; Anthropic (l'IA Claude) traite le texte nécessaire pour lire ton CV et écrire tes lettres, sans s'en servir pour entraîner ses modèles ; Google transporte les emails envoyés depuis ton Gmail.</p></details>
+  <details open><summary>Sécurité</summary><p>Connexions chiffrées (HTTPS) ; aucun mot de passe stocké ; sessions conservées sous forme d'empreinte ; autorisation Gmail chiffrée (AES-GCM) ; un espace isolé par utilisateur ; journal des connexions.</p></details>
+  <details open><summary>Tes droits</summary><p>Tu peux tout supprimer à tout moment : Réglages → « Supprimer mon compte » efface immédiatement ton compte, ton CV, tes lettres et la mémoire de ton agent, et révoque l'autorisation Gmail. Pour toute question ou demande d'accès à tes données, écris-nous à l'adresse indiquée dans les emails de l'application.</p></details>
 </main>
 <footer class="pied"><div class="page"><span>© Agents Emploi — bêta</span><a href="./">Accueil</a></div></footer>
 </body>

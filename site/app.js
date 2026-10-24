@@ -28,6 +28,10 @@ async function appel(chemin, options = {}) {
   else if (corps !== undefined) { entetes["Content-Type"] = "application/json"; body = JSON.stringify(corps); }
   const r = await fetch(API + chemin, { method: methode, headers: entetes, body, credentials: "omit" });
   if (r.status === 401 && jeton) { deconnecter(); throw new Error("Session expirée, reconnecte-toi."); }
+  if (r.status === 403 && utilisateur) {                     // autorisation Gmail retirée chez Google
+    utilisateur.gmail_ok = false; clearInterval(minuteur); initAutorisation();
+    throw new Error("Autorise à nouveau l'envoi depuis ton Gmail.");
+  }
   if (!r.ok) {
     let msg = "Erreur " + r.status;
     try { msg = (await r.json()).detail || msg; } catch (e) { /* réponse non JSON */ }
@@ -44,7 +48,7 @@ function toast(texte) {
 }
 
 function ecran(nom) {
-  for (const id of ["ecran-connexion", "ecran-agents", "ecran-app"]) $("#" + id).hidden = id !== nom;
+  for (const id of ["ecran-connexion", "ecran-autorisation", "ecran-agents", "ecran-app"]) $("#" + id).hidden = id !== nom;
 }
 
 // ---------- Texte enrichi sûr : *gras* et liens, construits en DOM ----------
@@ -60,69 +64,75 @@ function remplir(el, texte) {
   }
 }
 
-// ---------- Connexion ----------
+// ---------- Connexion (Google uniquement) ----------
+// Flux « code d'autorisation » : Google ouvre sa fenêtre, la personne coche « Envoyer des e-mails en votre nom »,
+// le site reçoit un code à usage unique et le donne au serveur, qui seul l'échange (avec son secret) contre les jetons.
+const PORTEES = "openid email profile https://www.googleapis.com/auth/gmail.send";
+let clientGoogle = null;
+
+function ecranErreur(id, texte, info) { const e = $(id); e.textContent = texte || ""; e.classList.toggle("info", !!info); }
+
 async function initConnexion() {
   ecran("ecran-connexion");
-  let sante = {};
-  try { sante = await appel("/api/sante"); } catch (e) { $("#erreur-connexion").textContent = "Serveur injoignable pour le moment."; }
-  $("#sep-fournisseurs").hidden = !(sante.google || sante.apple);
-  if (sante.google && sante.google_client_id) chargerGoogle(sante.google_client_id);
-  if (sante.apple && sante.apple_client_id) chargerApple(sante.apple_client_id);
-  if (DEMO) { $("#erreur-connexion").textContent = "Démo : n'importe quel email, puis n'importe quel code à 6 chiffres."; $("#erreur-connexion").classList.add("info"); }
+  if (DEMO) return ecranErreur("#erreur-connexion", "Démo : le bouton te connecte avec un compte fictif.", true);
+  try {
+    const sante = await appel("/api/sante");
+    if (!sante.google || !sante.google_client_id) return ecranErreur("#erreur-connexion", "La connexion Google n'est pas encore activée sur le serveur.");
+    await preparerGoogle(sante.google_client_id, sante.portees || PORTEES);
+  } catch (e) { ecranErreur("#erreur-connexion", "Serveur injoignable pour le moment. Réessaie dans un instant."); }
 }
 
 function charger(src) {
   return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.async = true; s.onload = ok; s.onerror = ko; document.head.append(s); });
 }
 
-async function chargerGoogle(clientId) {
-  try {
-    await charger("https://accounts.google.com/gsi/client");
-    google.accounts.id.initialize({ client_id: clientId, callback: (r) => connecte(appel("/api/auth/google", { methode: "POST", corps: { jeton: r.credential } })) });
-    google.accounts.id.renderButton($("#bouton-google"), { theme: "outline", size: "large", shape: "pill", text: "continue_with", locale: "fr", width: 320 });
-  } catch (e) { /* Google indisponible : l'email reste possible */ }
+async function preparerGoogle(clientId, portees) {
+  if (clientGoogle) return;
+  await charger("https://accounts.google.com/gsi/client");
+  clientGoogle = (consentement) => google.accounts.oauth2.initCodeClient({
+    client_id: clientId, scope: portees, ux_mode: "popup", include_granted_scopes: true,
+    ...(consentement ? { prompt: "consent" } : {}),
+    callback: (r) => {
+      if (r.error) return ecranErreur(utilisateur ? "#erreur-autorisation" : "#erreur-connexion", "Connexion annulée.");
+      connecte(appel("/api/auth/google", { methode: "POST", corps: { code: r.code } }));
+    },
+    error_callback: (e) => ecranErreur(utilisateur ? "#erreur-autorisation" : "#erreur-connexion",
+      e && e.type === "popup_closed" ? "Fenêtre Google fermée. Réessaie." : "Google n'a pas pu s'ouvrir (bloqueur de fenêtres ?)."),
+  });
 }
 
-async function chargerApple(clientId) {
-  try {
-    await charger("https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/fr_FR/appleid.auth.js");
-    AppleID.auth.init({ clientId, scope: "name email", redirectURI: location.origin + location.pathname, usePopup: true });
-    const b = $("#bouton-apple"); b.hidden = false;
-    b.onclick = async () => {
-      try {
-        const r = await AppleID.auth.signIn();
-        connecte(appel("/api/auth/apple", { methode: "POST", corps: { jeton: r.authorization.id_token } }));
-      } catch (e) { /* fenêtre fermée */ }
-    };
-  } catch (e) { /* Apple indisponible */ }
+function ouvrirGoogle(consentement) {
+  if (DEMO) return connecte(appel("/api/auth/google", { methode: "POST", corps: { code: "demo" } }));
+  if (!clientGoogle) return ecranErreur("#erreur-connexion", "Google se charge… réessaie dans une seconde.");
+  clientGoogle(consentement).requestCode();           // doit partir directement du clic (sinon la fenêtre est bloquée)
 }
 
-$("#form-email").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const bouton = ev.submitter; bouton.disabled = true;
-  $("#erreur-connexion").textContent = "";
-  try {
-    await appel("/api/auth/code", { methode: "POST", corps: { email: $("#email").value.trim() } });
-    $("#form-email").hidden = true; $("#form-code").hidden = false; $("#code").focus();
-    toast("Code envoyé ! Regarde ta boîte mail (et les spams).");
-  } catch (e) { $("#erreur-connexion").textContent = e.message; }
-  bouton.disabled = false;
-});
-
-$("#form-code").addEventListener("submit", (ev) => {
-  ev.preventDefault();
-  connecte(appel("/api/auth/code/verifier", { methode: "POST", corps: { email: $("#email").value.trim(), code: $("#code").value } }));
-});
-$("#autre-email").onclick = () => { $("#form-code").hidden = true; $("#form-email").hidden = false; };
+$("#bouton-google").onclick = () => ouvrirGoogle(false);
+$("#bouton-autoriser").onclick = () => ouvrirGoogle(true);        // « consent » : Google redemande la case à cocher
+$("#deconnexion-autorisation").onclick = async () => {
+  try { await appel("/api/auth/deconnexion", { methode: "POST" }); } catch (e) { /* déjà expirée */ }
+  deconnecter();
+};
 
 async function connecte(promesse) {
-  $("#erreur-connexion").textContent = ""; $("#erreur-connexion").classList.remove("info");
+  ecranErreur("#erreur-connexion", ""); ecranErreur("#erreur-autorisation", "");
   try {
     const r = await promesse;
     jeton = r.jeton; localStorage.setItem("ae_jeton", jeton);
     utilisateur = r.utilisateur;
+    utilisateur._refus = !utilisateur.gmail_ok;            // vient de passer par Google sans cocher la case
     suite();
-  } catch (e) { $("#erreur-connexion").textContent = e.message; }
+  } catch (e) { ecranErreur(utilisateur ? "#erreur-autorisation" : "#erreur-connexion", e.message); }
+}
+
+async function initAutorisation() {
+  ecran("ecran-autorisation");
+  if (!DEMO) {
+    try { const s = await appel("/api/sante"); await preparerGoogle(s.google_client_id, s.portees || PORTEES); }
+    catch (e) { ecranErreur("#erreur-autorisation", "Serveur injoignable pour le moment."); }
+  }
+  if (utilisateur && utilisateur.gmail_ok === false && utilisateur._refus)
+    ecranErreur("#erreur-autorisation", "La case « Envoyer des e-mails en votre nom » n'a pas été cochée.");
 }
 
 function deconnecter() {
@@ -150,13 +160,17 @@ async function initAgents() {
 }
 
 // ---------- Application ----------
-function suite() { if (!utilisateur.agent) initAgents(); else initApp(); }
+function suite() {
+  if (!utilisateur.gmail_ok) return initAutorisation();
+  if (!utilisateur.agent) initAgents(); else initApp();
+}
 
 function initApp() {
   ecran("ecran-app");
   $("#qui").textContent = utilisateur.email;
-  $("#adresse-test").textContent = utilisateur.adresse_test || utilisateur.email;
-  $("#adresse-agent").textContent = utilisateur.adresse_agent || "—";
+  $("#adresse-envoi").textContent = utilisateur.email;
+  $("#reglage-adresse-agent").hidden = !utilisateur.adresse_agent;
+  $("#adresse-agent").textContent = utilisateur.adresse_agent || "";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
   montrer("discussion");
