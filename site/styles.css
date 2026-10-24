@@ -69,8 +69,8 @@ p { margin: 0 0 1em; }
   background: rgba(10, 10, 12, .72); border-bottom: 1px solid var(--trait); }
 .entete .page { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; }
 .logo { display: flex; align-items: center; gap: 10px; font: 600 1.02rem var(--sans); letter-spacing: -.02em; text-decoration: none; }
-.logo-marque { width: 28px; height: 28px; background: var(--accent); color: var(--fond); display: grid; place-items: center;
-  font: 700 .95rem var(--mono); }
+.logo { gap: 9px; font-size: 1.22rem; letter-spacing: -.04em; }
+.logo-marque { width: 28px; height: 28px; display: block; margin-right: 1px; }
 .nav { display: flex; gap: 26px; align-items: center; }
 .nav a { text-decoration: none; color: var(--texte-2); font-size: .9rem; transition: color .2s; }
 .nav a:hover { color: var(--texte); }
@@ -97,9 +97,8 @@ p { margin: 0 0 1em; }
 .defiler i::after { content: ""; position: absolute; left: 0; top: -40%; width: 1px; height: 40%; background: var(--texte);
   animation: descend 1.8s ease-in-out infinite; }
 @keyframes descend { to { top: 110%; } }
-.g { width: 22px; height: 22px; display: inline-grid; place-items: center; background: var(--fond); color: var(--texte);
-  font: 700 .85rem var(--sans); }
-.bouton:hover .g, .bouton.vert .g { background: var(--fond); color: var(--accent); }
+.g { width: 22px; height: 22px; display: inline-grid; place-items: center; color: #fff; font: 700 .85rem var(--sans);
+  background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); }
 
 /* Barre d'avancement (haut de l'écran) */
 .avancee { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 40; pointer-events: none; }
@@ -534,3 +533,5 @@ body.apres-parcours .cta-flottant { opacity: 1; transform: none; pointer-events:
 .apercu-google .g-ligne b { color: var(--texte); }
 .liste-points { list-style: none; padding: 0; margin: 18px 0 22px; display: flex; flex-direction: column; gap: 10px; color: var(--texte-2); font-size: .92rem; }
 .liste-points li::before { content: "■ "; color: var(--accent); font-size: .6rem; vertical-align: 2px; }
+.nav a.bouton { color: var(--fond); }
+.nav a.bouton:hover { color: var(--fond); }

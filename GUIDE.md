@@ -18,7 +18,7 @@ Sur la page d'un dépôt, le bouton **`main`** en haut à gauche (au-dessus des 
 
 ## 3. Fusionner une Pull Request (à faire 3 fois, une par dépôt)
 
-1. Va sur le dépôt (ex. https://github.com/brrrr999/Agent-avocat).
+1. Va sur le dépôt (ex. https://github.com/AppllAI/Agent-avocat).
 2. Clique sur l'onglet **Pull requests** (en haut, entre *Issues* et *Actions*).
 3. Clique sur la PR ouverte par Claude.
 4. Descends en bas de la page : bouton vert **Merge pull request** → puis **Confirm merge**.
@@ -31,14 +31,14 @@ sait prendre la bonne version dans tous les cas.)
 
 À faire **une seule fois**, de préférence **avant** de fusionner la PR d'`App-final` :
 
-1. Va sur https://github.com/brrrr999/App-final
+1. Va sur https://github.com/AppllAI/App-final
 2. Clique sur **Settings** (l'onglet avec une roue dentée, tout à droite des onglets).
 3. Dans le menu de gauche, section *Code and automation*, clique sur **Pages**.
 4. Sous **Build and deployment**, dans la liste **Source**, choisis **GitHub Actions**. (C'est enregistré tout seul.)
 5. Fusionne la PR d'`App-final` (étape 3). Le robot publie le site en ~1 minute.
 6. Onglet **Actions** : une ligne « Site (GitHub Pages) » avec une **coche verte** = c'est en ligne.
    Si tu avais fusionné avant l'étape 4 : clique sur « Site (GitHub Pages) » à gauche → **Run workflow** → **Run workflow**.
-7. Ton site : **https://brrrr999.github.io/App-final/**
+7. Ton site : **https://appllai.github.io/App-final/**
 
 Tant que le serveur n'est pas en ligne, l'espace personnel fonctionne en **mode démo** (réponses fictives).
 
