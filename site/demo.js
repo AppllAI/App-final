@@ -85,6 +85,18 @@ window.DEMO = (() => {
       if (chemin.startsWith("/api/fichiers/")) return new Blob(["%PDF-1.4 démo"], { type: "application/pdf" });
       if (chemin === "/api/candidatures") return etat.cand;
       if (chemin === "/api/test") return etat.test;
+      if (chemin === "/api/tableau") {
+        const tests = etat.cand.length, envoyees = etat.test.statut === "reussi" ? 4 : 0;
+        const activite = etat.cand.length ? [
+          { role: "Envoi", quoi: `Test n°${etat.test.tour} → ${etat.utilisateur.email}`, le: maintenant() },
+          { role: "Rédaction", quoi: "Lettre écrite et vérifiée (9/10) · Cabinet Lumen", le: maintenant() },
+          { role: "Tri selon tes règles", quoi: "29 offres écartées (pénal, néerlandais exigé)", le: maintenant() },
+          { role: "Recherche d'offres", quoi: "EURES, Forem, LexGO : 37 nouvelles offres", le: maintenant() }] : [];
+        return { chiffres: { analysees: tests ? 37 : 0, ecartees: tests ? 29 : 0, en_preparation: tests ? 5 : 0, tests,
+                             envoyees, reponses: envoyees ? 1 : 0, entretiens: envoyees ? 1 : 0, recherches: tests ? 2 : 0,
+                             taux_reponse: envoyees ? 25 : null },
+                 activite, rdv: [], en_ce_moment: null, agent_actif: true, derniere_activite: activite.length ? maintenant() : null };
+      }
       throw new Error("Route inconnue en démo : " + chemin);
     },
   };
