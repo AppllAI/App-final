@@ -791,3 +791,26 @@ input:focus, textarea:focus { border-color: rgba(165, 168, 255, .6); box-shadow:
 .puce input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .puce:active span { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) { .puce span, .etapes-test li { transition: none; } }
+
+/* ---------- Style de candidature : strict, équilibré, audacieux ---------- */
+.audaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 8px; }
+.carte-audace { display: flex; flex-direction: column; gap: 8px; padding: 20px; text-align: left; font: inherit; color: inherit;
+  cursor: pointer; background: var(--surface); border: 1px solid var(--trait); border-radius: 16px;
+  transition: border-color .2s, transform .2s, background .2s; min-width: 0; }
+.carte-audace:hover { border-color: var(--accent-trait); transform: translateY(-2px); }
+.carte-audace[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-fond); box-shadow: 0 0 0 4px var(--accent-fond); }
+.tete-audace { display: flex; align-items: center; gap: 10px; }
+.tete-audace b { font-size: 1.05rem; }
+.tete-audace .etiquette { margin-left: auto; }
+.icone-audace { width: 34px; height: 34px; padding: 6px; flex: none; border-radius: 10px; color: var(--accent);
+  background: var(--surface-2); border: 1px solid var(--trait); }
+.carte-audace[aria-pressed="true"] .icone-audace { background: var(--degrade, var(--accent)); color: var(--fond); border-color: transparent; }
+.accroche { font: 500 .78rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.texte-audace { font-size: .9rem; color: var(--texte-2); line-height: 1.5; }
+.confirmation-audace { margin-top: 14px; padding: 20px; border: 1px solid var(--accent); border-radius: 16px; background: var(--accent-fond);
+  display: flex; flex-direction: column; gap: 10px; animation: entre .25s ease both; }
+.confirmation-audace ul { margin: 0; padding-left: 1.2em; color: var(--texte-2); display: grid; gap: 6px; font-size: .92rem; }
+.boutons-audace { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+#reglage-audace .audaces { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+#reglage-audace .carte-audace { padding: 14px; }
+@media (prefers-reduced-motion: reduce) { .carte-audace, .confirmation-audace { transition: none; animation: none; } }

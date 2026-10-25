@@ -68,6 +68,16 @@
   </div>
 </section>
 
+<!-- Style de candidature -->
+<section class="ecran" id="ecran-audace" hidden>
+  <div class="page">
+    <span class="mono">Étape 2 sur 2</span>
+    <h1 class="titre-agents">Comment veux-tu postuler ?</h1>
+    <p class="sous">Choisis ton style. Tu pourras le changer quand tu veux dans Réglages.</p>
+    <div id="choix-audace"></div>
+  </div>
+</section>
+
 <!-- Application -->
 <div class="coque" id="ecran-app" hidden>
   <aside class="cote" role="tablist" aria-label="Sections">
@@ -107,6 +117,9 @@
         <div class="reglage" id="reglage-adresse-agent" hidden><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
           (LinkedIn, Jobat, StepStone, Indeed…) et les réponses des recruteurs : ton agent s'en occupe.</p>
           <span class="code-agent" id="adresse-agent"></span></div>
+        <div class="reglage"><b>Ton style de candidature</b>
+          <p class="petit-texte serre">Ton agent l'applique tout de suite, et les offres récentes sont revues.</p>
+          <div id="reglage-audace"></div></div>
         <div class="reglage"><b>Ton agent</b><p class="petit-texte serre" id="agent-actuel"></p>
           <button class="bouton clair petit" type="button" id="changer-agent">Changer d'agent</button></div>
         <div class="reglage"><button class="bouton clair petit" type="button" id="deconnexion">Me déconnecter</button></div>
