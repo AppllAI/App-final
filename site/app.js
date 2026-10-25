@@ -324,8 +324,10 @@ async function afficherTableau() {
     carteAction(`Entretien proposé · ${r.entreprise || "un employeur"}`, `${joliRdv(r.debut)}${r.lieu ? " · " + r.lieu : ""}. Tu es d'accord ?`,
       "Répondre", () => montrer("discussion"));
   if (test && test.statut === "a_lancer") carteAction("Lance ta phase de test", `3 candidatures arriveront sur ${utilisateur.email}, pour que tu les notes.`, "Voir", () => montrer("test"));
-  const aNoter = test ? test.candidatures.filter((c) => c.note === null || c.note === undefined).length : 0;
-  if (test && ["en_cours", "a_noter"].includes(test.statut) && aNoter && test.candidatures.length)
+  const cands = (test && test.candidatures) || [];
+  const aNoter = cands.filter((c) => c.note === null || c.note === undefined).length;
+  if (test && test.statut === "a_noter" && !test.candidatures) carteAction("Test à noter", "Tes candidatures de test t'attendent sur ton email.", "Noter", () => montrer("test"));
+  if (test && ["en_cours", "a_noter"].includes(test.statut) && aNoter && cands.length)
     carteAction(`${aNoter} candidature${aNoter > 1 ? "s" : ""} à noter`, "Elles sont dans ta boîte mail. Donne une note sur 20 à chacune.", "Noter", () => montrer("test"));
   if (test && test.statut === "retour") carteAction("Dis-lui ce qui n'a pas été", "La moyenne est sous 15/20 : tes remarques, puis il refait un test.", "Répondre", () => montrer("test"));
   if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Moyenne ≥ 15/20 : tu peux passer aux vraies candidatures.", "Décider", () => montrer("test"));
@@ -413,6 +415,10 @@ async function afficherTest(force = true) {
   let t;
   try { t = await appel("/api/test"); } catch (e) { return toast(e.message); }
   if (!t) return;
+  // Serveur pas encore mis à jour (ancien format : une note globale par test) : on s'adapte
+  const ancien = !Array.isArray(t.candidatures);
+  t = { taille: 3, exigences: [], historique: [], moyenne: null, ...t, candidatures: t.candidatures || [] };
+  if (ancien && t.notes && t.notes.length) t.moyenne = t.notes[t.notes.length - 1].note;
   const empreinte = JSON.stringify(t);
   if (!force && empreinte === dernierTest) return;          // rien de neuf : on ne redessine pas (pas de clignotement)
   dernierTest = empreinte;
@@ -431,6 +437,7 @@ async function afficherTest(force = true) {
   regle.append(plein, seuil);
   zone.append(tete, regle);
   if (t.statut === "retour") zone.append(formulaireRetour());   // d'abord ce qu'on attend d'elle
+  if (ancien && t.statut === "a_noter") zone.append(formulaireNoteGlobale());
 
   if (t.statut === "a_lancer") {
     const b = el("button", "bouton vert large", "▶  Lancer le test");
@@ -480,6 +487,23 @@ async function afficherTest(force = true) {
     const ul = el("ul"); t.exigences.slice().reverse().forEach((x) => ul.append(el("li", "", x.texte))); ex.append(ul);
     zone.append(ex);
   }
+}
+
+// Note globale du test (« note 14 : trop formel ») : toujours comprise par l'agent, utile avec un serveur ancien
+function formulaireNoteGlobale() {
+  const f = el("form", "retour");
+  f.append(el("b", "", "Ta note pour ce test"));
+  const ligne = curseurNote(14, () => {});
+  ligne.querySelector("button").remove();
+  const z = el("textarea"); z.maxLength = 1500; z.placeholder = "Ce que tu as aimé, ce que tu as moins aimé (ton, longueur, ce qui manque…)";
+  z.setAttribute("aria-label", "Ton avis");
+  const ok = el("button", "bouton vert", "Envoyer ma note"); ok.type = "submit";
+  f.append(ligne, z, ok);
+  f.onsubmit = (ev) => {
+    ev.preventDefault(); const n = ligne.querySelector("input").value;
+    envoyer(`note ${n} : ${z.value.trim() || "pas de commentaire"}`); f.remove(); montrer("discussion");
+  };
+  return f;
 }
 
 function formulaireRetour() {
