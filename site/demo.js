@@ -97,14 +97,42 @@ window.DEMO = (() => {
     dit("Compris ! (mode démo : en vrai, ton agent agit pour de bon.)");
   }
 
+  function demoAdmin(chemin) {
+    const compte = { id: "demo1", email: "sam.demo@gmail.com", nom: "Sam", agent: "student", cree_le: "2026-10-25 14:50:00",
+      vu_le: Date.now() / 1000 - 600, gmail_ok: true, admin: false, en_marche: true, cv: true, test: "en_cours", note: null,
+      offres: 113, retenues: 6, envoyees: 0, tests_envoyes: 2, cout_24h: 0.21, cout_total: 0.21, derniere_activite: "2026-10-25 15:20:00" };
+    if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 },
+      modele_local: { etat: "en marche", machine_dispo_mo: 6645, machine_total_mo: 7941, tri_7j: { emails: 0, duree_moyenne_s: null } } };
+    if (chemin === "/api/admin/utilisateurs") return [compte];
+    if (/\/cv$|\/fichiers\//.test(chemin)) return new Blob(["%PDF-1.4 démo"], { type: "application/pdf" });
+    if (/\/offres\/\d+$/.test(chemin)) return { id: 16, titre: "Vendeur étudiant (démo)", entreprise: "Boutique Lumen", ville: "Bruxelles",
+      statut: "repetee", score: 7, raison: "Vente le samedi, comme demandé.", email_contact: "jobs@boutique-lumen.be", url: "",
+      objet_mail: "Candidature : vendeur étudiant", corps_mail: "Madame, Monsieur,\n\nVous trouverez ma candidature en pièce jointe.",
+      lettre: "Lettre de démonstration.", note_lettre: 8, description: "Annonce de démonstration.", envoye_le: "2026-10-25 15:10:00",
+      journal: [{ agent: "redacteur", quoi: "→ validee", le: "2026-10-25 15:05:00" }] };
+    return { compte, fiche_cv: "# Fiche profil (démo)\n- Bachelier en économie\n- Caissier le samedi depuis 1 an",
+      objectif: "villes: [Bruxelles]\npostes_vises: [vendeur, serveur]", memoire: [], exigences: [],
+      test: { tour: 1, statut: "en_cours", note: null, note_ia: 16, criteres: [], commentaire: "", historique: [],
+        candidatures: [{ titre: "Vendeur étudiant", entreprise: "Boutique Lumen", envoye_le: "2026-10-25 15:10:00", note_ia: 16 }] },
+      offres: [{ id: 16, titre: "Vendeur étudiant (démo)", entreprise: "Boutique Lumen", ville: "Bruxelles", source: "indeed", statut: "repetee",
+        score: 7, raison: "Vente le samedi.", note_lettre: 8, email_contact: "jobs@boutique-lumen.be", envoye_le: "2026-10-25 15:10:00" }],
+      emails_recus: [], rdv: [], couts: [{ agent: "redacteur", modele: "sonnet", appels: 5, eur: 0.1, eur_24h: 0.1 }],
+      journal: [{ agent: "eclaireur", quoi: "113 nouvelle(s) offre(s)", le: "2026-10-25 14:55:00" }],
+      discussion: [{ de: "personne", id: 1, texte: "Voici mon CV.", fichier: "cv.pdf", bouton: false, le: "2026-10-25 14:51:00" },
+        { de: "agent", id: 1, texte: "📄 CV lu ✅", fichier: false, lu: true, le: "2026-10-25 14:51:10" }] };
+  }
+
   return {
     async appel(chemin, { methode = "GET", corps, fichier } = {}) {
       await new Promise((r) => setTimeout(r, 250));
       if (chemin === "/api/sante") return { ok: true, google: true, google_client_id: "demo" };
       if (chemin === "/api/agents") return AGENTS_SECOURS;
+      // Suivi administrateur (démo : app.html?admin) — un testeur fictif
+      if (chemin.startsWith("/api/admin/")) return demoAdmin(chemin);
       if (chemin === "/api/auth/google") {
         etat.utilisateur = { email: "camille.demo@gmail.com", nom: "Camille", agent: null, notif_email: true, audace: "equilibre", fournisseur: "google",
           adresse_test: "camille.demo@gmail.com", gmail_ok: true, adresse_agent: null };
+        if (/[?&]admin\b/.test(location.search)) Object.assign(etat.utilisateur, { email: "admin.demo@gmail.com", admin: true });
         return { jeton: "demo", utilisateur: etat.utilisateur };
       }
       if (!etat.utilisateur) etat.utilisateur = { email: "camille.demo@gmail.com", agent: null, notif_email: true, audace: "equilibre",

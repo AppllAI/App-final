@@ -79,6 +79,25 @@
 </section>
 
 <!-- Application -->
+<!-- Suivi des bêta-testeurs : seulement pour l'administrateur (vérifié par le serveur) -->
+<section class="admin" id="ecran-admin" hidden>
+  <header class="admin-tete">
+    <a class="logo" href="./"><img class="logo-marque" src="icones/logo.svg" alt="" width="28" height="28"><span class="mot">appl<span class="accent">ai</span></span></a>
+    <span class="etiquette vert">Administrateur</span>
+    <span class="sous admin-qui" id="admin-qui"></span>
+    <button class="bouton clair petit" type="button" id="admin-deconnexion">Se déconnecter</button>
+  </header>
+  <div class="admin-page">
+    <div class="admin-barre">
+      <button class="bouton clair petit" type="button" id="admin-retour" hidden>← Tous les comptes</button>
+      <h1 id="admin-titre">Bêta-testeurs</h1>
+      <button class="bouton clair petit" type="button" id="admin-actualiser">Actualiser</button>
+    </div>
+    <div class="admin-serveur" id="admin-serveur"></div>
+    <div id="admin-contenu"></div>
+  </div>
+</section>
+
 <div class="coque" id="ecran-app" hidden>
   <aside class="cote" role="tablist" aria-label="Sections">
     <a class="logo" href="./"><img class="logo-marque" src="icones/logo.svg" alt="" width="28" height="28"><span class="mot">appl<span class="accent">ai</span></span></a>
@@ -142,6 +161,7 @@
 <script src="config.js"></script>
 <script src="accueil.js"></script>
 <script src="demo.js"></script>
+<script src="admin.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

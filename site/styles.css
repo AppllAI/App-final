@@ -590,3 +590,53 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .toast { padding: 12px 20px; }
 .accroche, .etiquette, .pastille-note small, .activite .role, .champ label, .separateur { text-transform: none; letter-spacing: .01em; }
 .barre .etat { border-radius: 999px; }
+
+/* =====================================================================================================================
+   SUIVI DES BÊTA-TESTEURS (administrateur)
+   ===================================================================================================================== */
+.admin { min-height: 100dvh; }
+.admin-tete { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+  background: rgba(10, 10, 12, .7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.admin-qui { margin-left: auto; font-size: .86rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-tete .etiquette { flex: none; }
+@media (max-width: 560px) { .admin-qui { display: none; } .admin-tete #admin-deconnexion { margin-left: auto; } .admin-tete { padding: 10px 14px; } }
+.admin-page { width: min(1100px, 100% - 32px); margin: 0 auto; padding: 24px 0 60px; }
+.admin-barre { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.admin-barre h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 0; flex: 1; min-width: 0; word-break: break-word; }
+.admin-serveur, .admin-etapes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.admin-etapes { margin: 4px 0 0; }
+.puce-etat { font-size: .8rem; padding: 5px 11px; border-radius: 999px; background: rgba(255, 255, 255, .06); color: var(--texte-2); }
+.puce-etat.ok { background: var(--accent-fond); color: var(--accent); }
+.admin-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 12px; }
+.admin-carte, .admin-offre { display: flex; flex-direction: column; gap: 8px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  padding: 20px; border-radius: var(--r-l); background: var(--surface); border: 1px solid rgba(255, 255, 255, .07);
+  transition: border-color .2s, transform .2s; min-width: 0; }
+.admin-carte:hover, .admin-offre:hover { border-color: var(--accent-trait); transform: translateY(-2px); }
+.admin-carte-haut { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.admin-carte-haut b { word-break: break-word; }
+.admin-carte-haut .etiquette { flex: none; }
+.admin-chiffres { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 4px; }
+.admin-chiffres div { padding: 10px 8px; border-radius: var(--r-s); background: rgba(255, 255, 255, .04); min-width: 0; }
+.admin-chiffres strong { display: block; font-size: 1.05rem; }
+.admin-chiffres span { font-size: .7rem; color: var(--texte-3); }
+@media (max-width: 480px) { .admin-chiffres { grid-template-columns: repeat(3, 1fr); } .admin-grille { grid-template-columns: 1fr; } }
+.admin-onglets { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: none; }
+.puce-onglet { flex: none; padding: 8px 15px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .1); background: transparent; color: var(--texte-2);
+  font: 500 .88rem var(--sans); cursor: pointer; }
+.puce-onglet[aria-pressed="true"] { background: var(--degrade); color: #0b0b12; border-color: transparent; }
+.admin-corps { display: flex; flex-direction: column; gap: 14px; }
+.admin-bloc { display: flex; flex-direction: column; gap: 8px; }
+.admin-bloc h3 { font-size: 1.02rem; margin-bottom: 4px; }
+.admin-ligne { display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, .05); font-size: .9rem; }
+.admin-ligne span:last-child { word-break: break-word; }
+@media (max-width: 560px) { .admin-ligne { grid-template-columns: 1fr; gap: 2px; } }
+.admin-pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 14px; border-radius: var(--r-m); background: rgba(0, 0, 0, .3);
+  font: .86rem/1.55 var(--sans); color: var(--texte); max-height: 520px; overflow: auto; }
+.admin-offres { display: flex; flex-direction: column; gap: 10px; }
+.admin-fil { max-width: none; }
+.admin-fil .bulle.de-agent { margin-left: 0; }
+.admin-fil .bulle.de-agent::before { display: none; }
+.bulle.admin-bouton { opacity: .7; }
+.admin-souvenir { margin: 0; padding: 8px 12px; border-radius: var(--r-s); background: rgba(255, 255, 255, .04); font-size: .88rem; }
+.lien { color: var(--accent); }
+@media (max-width: 640px) { .admin-barre h1 { order: 3; flex-basis: 100%; font-size: 1.4rem; word-break: break-all; } .admin-barre #admin-actualiser { margin-left: auto; } }
