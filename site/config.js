@@ -1,6 +1,5 @@
-// Adresse du serveur (l'API). Vide = mode DÉMO : le site fonctionne avec des réponses fictives, rien n'est envoyé.
-// Après la mise en ligne du serveur (voir README), remplace par son adresse, par ex. :
-//   API: "https://api.12-34-56-78.sslip.io"
+// Adresse du serveur (l'API), toujours en HTTPS. Vide = mode DÉMO : réponses fictives, rien n'est envoyé.
+// Serveur Contabo (certificat Let's Encrypt). Le jour où on a un nom de domaine : "https://api.<domaine>".
 window.CONFIG = {
-  API: "",
+  API: "https://api.89-116-25-119.sslip.io",
 };

@@ -1,6 +1,6 @@
 // Service worker : le site s'ouvre instantanément (même hors ligne pour l'interface).
 // Les appels à l'API ne sont JAMAIS mis en cache (données personnelles).
-const VERSION = "applai-v1";
+const VERSION = "applai-v2";
 const FICHIERS = ["./", "index.html", "app.html", "styles.css", "config.js", "accueil.js", "demo.js", "app.js",
   "confidentialite.html", "manifest.webmanifest", "icones/logo.svg", "icones/icone-192.png"];
 
