@@ -4,6 +4,7 @@
 const API = (window.CONFIG.API || "").replace(/\/$/, "");
 const DEMO = !API;
 const $ = (s) => document.querySelector(s);
+function el(tag, cls, texte) { const e = document.createElement(tag); if (cls) e.className = cls; if (texte !== undefined) e.textContent = texte; return e; }
 const STATUTS = {
   qualifiee: ["Retenue", ""], redigee: ["Lettre écrite", ""], a_valider: ["À valider", "or"], validee: ["En partance", "or"],
   repetee: ["Test envoyé", "terre"], manuelle: ["Via le site", "or"], envoyee: ["Envoyée", "vert"], relancee: ["Relancée", "vert"],
@@ -212,6 +213,10 @@ async function rafraichir() {
   if (c.occupe) { const e = document.createElement("div"); e.className = "ecrit"; e.append(document.createElement("span"), document.createElement("span"), document.createElement("span")); $("#fil").append(e); }
   if (nouveaux.length) defiler();
   if (vueActive === "accueil" && Date.now() - (window._dernierTableau || 0) > 15000) { window._dernierTableau = Date.now(); afficherTableau(); }
+  // Onglet test ouvert : on suit l'arrivée des candidatures (sans effacer une note en cours de saisie)
+  if (vueActive === "test" && !document.querySelector("#carte-test .note-inline, #carte-test .retour textarea:focus")
+      && !(document.querySelector("#carte-test .retour textarea") || {}).value
+      && Date.now() - (window._dernierTest || 0) > 5000) { window._dernierTest = Date.now(); afficherTest(false); }
 }
 
 function heure(le) { return le ? le.slice(11, 16) : ""; }
@@ -242,28 +247,10 @@ function afficherMessage(m) {
     b.append(choix);
   }
   fil.append(b);
-  if (m.role === "agent" && m.genre === "notation") fil.append(formulaireNote());
-}
-
-function formulaireNote() {
-  const f = document.createElement("form"); f.className = "noter";
-  const titre = document.createElement("span"); titre.className = "mono"; titre.textContent = "Ta note sur 20";
-  const chiffre = document.createElement("div"); chiffre.className = "chiffre";
-  const curseur = document.createElement("input"); curseur.type = "range"; curseur.min = 0; curseur.max = 20; curseur.value = 12;
-  curseur.setAttribute("aria-label", "Note sur 20");
-  const maj = () => { chiffre.textContent = curseur.value; const s = document.createElement("small"); s.textContent = " /20"; chiffre.append(s); };
-  curseur.oninput = maj; maj();
-  const zone = document.createElement("textarea");
-  zone.placeholder = "Ce que tu as aimé, ce que tu as moins aimé (ton, longueur, ce qui manque…)";
-  zone.maxLength = 1500; zone.setAttribute("aria-label", "Ton avis");
-  const ok = document.createElement("button"); ok.className = "bouton terre"; ok.type = "submit"; ok.textContent = "Envoyer ma note";
-  f.append(titre, chiffre, curseur, zone, ok);
-  f.onsubmit = (ev) => {
-    ev.preventDefault();
-    const texte = `note ${curseur.value} : ${zone.value.trim() || "pas de commentaire"}`;
-    envoyer(texte); f.remove();
-  };
-  return f;
+  if (m.role === "agent" && m.genre === "notation") {
+    const b = el("button", "bouton noter", "🧪 Noter mes candidatures"); b.type = "button"; b.onclick = () => montrer("test"); fil.append(b);
+  }
+  if (m.role === "agent" && m.genre === "retour") fil.append(formulaireRetour());
 }
 
 async function ouvrirFichier(id, nom) {
@@ -300,7 +287,6 @@ $("#fichier-cv").onchange = async (ev) => {
 
 // ---------- Accueil : le tableau de bord ----------
 // Tout est construit en DOM avec textContent (aucun HTML venant du serveur).
-function el(tag, cls, texte) { const e = document.createElement(tag); if (cls) e.className = cls; if (texte !== undefined) e.textContent = texte; return e; }
 const nombre = (n) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("fr-BE"));
 function depuis(le) {
   if (!le) return "";
@@ -323,8 +309,9 @@ async function afficherTableau() {
 
   // En ce moment
   $("#maintenant").classList.toggle("actif", !!t.en_ce_moment);
-  $("#maintenant-texte").textContent = t.en_ce_moment ? `${t.en_ce_moment}…`
-    : t.derniere_activite ? `En pause — dernière action ${depuis(t.derniere_activite)}. Il reprend tout seul.`
+  $("#maintenant-texte").textContent = t.en_pause ? "En pause, comme tu l'as demandé. Écris « reprendre » pour qu'il s'y remette."
+    : t.en_ce_moment ? `${t.en_ce_moment}…`
+    : t.derniere_activite ? `En veille — dernière action ${depuis(t.derniere_activite)}. Il repart tout seul à la prochaine recherche.`
     : "Prêt. Envoie ton CV et dis-lui ce que tu cherches.";
 
   // À toi de jouer : ce qui attend une décision
@@ -336,8 +323,12 @@ async function afficherTableau() {
   for (const r of (t.rdv || []).filter((x) => x.statut === "propose"))
     carteAction(`Entretien proposé · ${r.entreprise || "un employeur"}`, `${joliRdv(r.debut)}${r.lieu ? " · " + r.lieu : ""}. Tu es d'accord ?`,
       "Répondre", () => montrer("discussion"));
-  if (test && test.statut === "a_noter") carteAction(`Test n°${test.tour} à noter`, "3 candidatures t'attendent sur ton email. Donne une note sur 20.", "Noter", () => montrer("test"));
-  if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Ton agent attend ton accord pour écrire aux recruteurs.", "Donner mon accord", () => montrer("test"));
+  if (test && test.statut === "a_lancer") carteAction("Lance ta phase de test", `3 candidatures arriveront sur ${utilisateur.email}, pour que tu les notes.`, "Voir", () => montrer("test"));
+  const aNoter = test ? test.candidatures.filter((c) => c.note === null || c.note === undefined).length : 0;
+  if (test && ["en_cours", "a_noter"].includes(test.statut) && aNoter && test.candidatures.length)
+    carteAction(`${aNoter} candidature${aNoter > 1 ? "s" : ""} à noter`, "Elles sont dans ta boîte mail. Donne une note sur 20 à chacune.", "Noter", () => montrer("test"));
+  if (test && test.statut === "retour") carteAction("Dis-lui ce qui n'a pas été", "La moyenne est sous 15/20 : tes remarques, puis il refait un test.", "Répondre", () => montrer("test"));
+  if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Moyenne ≥ 15/20 : tu peux passer aux vraies candidatures.", "Décider", () => montrer("test"));
 
   // Chiffres clés
   const cartes = $("#cartes-chiffres"); cartes.textContent = "";
@@ -389,42 +380,121 @@ async function afficherCandidatures() {
   }
 }
 
-// ---------- Phase de test ----------
-async function afficherTest() {
-  const zone = $("#carte-test"); zone.textContent = "";
+// ---------- Phase de test : une note par candidature, la moyenne décide ----------
+const LIBELLES_TEST = {
+  a_lancer: ["Pas encore lancé", "Quand ton agent a ton CV et sait ce que tu cherches, lance le test : 3 candidatures arrivent sur ton email, rien chez les recruteurs."],
+  en_cours: ["Test en préparation", "Ton agent cherche des offres et écrit tes candidatures. Tu peux noter chacune dès qu'elle arrive."],
+  a_noter: ["À toi de noter", "Lis les candidatures reçues sur ton email, puis note chacune sur 20."],
+  retour: ["Dis-lui ce qui n'a pas été", "La moyenne est sous 15/20. Tes remarques sont gardées pour toutes tes futures candidatures."],
+  attente_accord: ["Test réussi 🎉", "La moyenne dépasse 15/20. Tu peux passer aux vraies candidatures."],
+  reussi: ["Phase de test réussie", "Ton agent postule pour de vrai, depuis ton Gmail."],
+};
+
+function commandeTest(chemin, corps, message) {
+  return appel(chemin, { methode: "POST", corps }).then(() => { if (message) toast(message); setTimeout(afficherTest, 1800); })
+    .catch((e) => toast(e.message));
+}
+
+function curseurNote(valeur, surValider) {
+  const f = el("form", "note-inline");
+  const chiffre = el("div", "chiffre-note");
+  const r = el("input"); r.type = "range"; r.min = 0; r.max = 20; r.value = valeur ?? 14; r.setAttribute("aria-label", "Ta note sur 20");
+  const maj = () => { chiffre.textContent = r.value; chiffre.append(el("small", "", "/20")); chiffre.classList.toggle("ok", +r.value >= 15); };
+  r.oninput = maj; maj();
+  const ok = el("button", "bouton petit vert", "Valider"); ok.type = "submit";
+  f.append(chiffre, r, ok);
+  f.onsubmit = (ev) => { ev.preventDefault(); ok.disabled = true; surValider(+r.value); };
+  return f;
+}
+
+let dernierTest = "";
+async function afficherTest(force = true) {
+  const zone = $("#carte-test");
   let t;
   try { t = await appel("/api/test"); } catch (e) { return toast(e.message); }
-  const derniere = t.notes.length ? t.notes[t.notes.length - 1].note : null;
-  const carte = document.createElement("div"); carte.className = "bareme";
-  const titre = document.createElement("h3");
-  titre.textContent = { en_cours: `Test n°${t.tour} en préparation`, a_noter: `Test n°${t.tour} : à toi de noter !`,
-    attente_accord: "Test réussi : j'attends ton accord", reussi: "Phase de test réussie 🎉" }[t.statut] || "Phase de test";
-  const regle = document.createElement("div"); regle.className = "regle";
-  const seuil = document.createElement("div"); seuil.className = "seuil";
-  const s = document.createElement("span"); s.textContent = "15/20 = feu vert"; seuil.append(s); regle.append(seuil);
-  if (derniere !== null) { const c = document.createElement("div"); c.className = "curseur"; c.style.left = (derniere / 20 * 100) + "%"; regle.append(c); }
-  const grad = document.createElement("div"); grad.className = "graduations";
-  ["0", "5", "10", "15", "20"].forEach((x) => { const sp = document.createElement("span"); sp.textContent = x; grad.append(sp); });
-  const p = document.createElement("p"); p.className = "petit-texte";
-  p.textContent = "Chaque test : 3 candidatures envoyées sur ton email, comme un recruteur les recevrait. Il faut au moins 2 tests et une note ≥ 15/20, puis ton accord, avant le premier envoi réel.";
-  const tours = document.createElement("div"); tours.className = "tours";
-  t.notes.forEach((n) => {
-    const d = document.createElement("div"); d.className = "tour";
-    const e = document.createElement("span"); e.className = "etiquette " + (n.note >= 15 ? "vert" : "terre"); e.textContent = `Test n°${n.tour}`;
-    const b = document.createElement("b"); b.textContent = `${n.note}/20`;
-    const c = document.createElement("span"); c.textContent = n.commentaire || "";
-    d.append(e, b, c); tours.append(d);
-  });
-  carte.append(titre, regle, grad, p, tours);
-  zone.append(carte);
-  if (t.statut === "a_noter") zone.append(formulaireNote());
+  if (!t) return;
+  const empreinte = JSON.stringify(t);
+  if (!force && empreinte === dernierTest) return;          // rien de neuf : on ne redessine pas (pas de clignotement)
+  dernierTest = empreinte;
+  zone.textContent = "";
+  const [titre, sous] = LIBELLES_TEST[t.statut] || ["Phase de test", ""];
+
+  // En-tête : où on en est + la moyenne sur la jauge
+  const tete = el("div", "test-tete");
+  const g = el("div"); g.append(el("span", "mono", `Test n°${t.tour}`), el("h3", "", titre), el("p", "petit-texte serre", sous));
+  const moy = el("div", "moyenne" + (t.moyenne !== null && t.moyenne >= 15 ? " ok" : ""));
+  moy.append(el("strong", "", t.moyenne === null ? "—" : String(t.moyenne).replace(".", ",")), el("small", "", "/20 de moyenne"));
+  tete.append(g, moy);
+  const regle = el("div", "regle"); const plein = el("div", "remplissage" + (t.moyenne >= 15 ? " ok" : ""));
+  plein.style.setProperty("width", `${((t.moyenne || 0) / 20) * 100}%`);
+  const seuil = el("div", "seuil"); seuil.append(el("span", "", "15/20"));
+  regle.append(plein, seuil);
+  zone.append(tete, regle);
+  if (t.statut === "retour") zone.append(formulaireRetour());   // d'abord ce qu'on attend d'elle
+
+  if (t.statut === "a_lancer") {
+    const b = el("button", "bouton vert large", "▶  Lancer le test");
+    b.type = "button"; b.onclick = () => { b.disabled = true; commandeTest("/api/test/lancer", undefined, "Test lancé : ton agent s'y met."); };
+    const p = el("p", "petit-texte", `Les ${t.taille} candidatures arriveront sur ${utilisateur.email}, jamais chez un recruteur.`);
+    zone.append(b, p);
+  }
+
+  // Les candidatures du test, une par une
+  if (t.candidatures.length || t.statut === "en_cours") {
+    const liste = el("div", "cand-test");
+    t.candidatures.forEach((c, i) => {
+      const ligne = el("div", "ct-ligne");
+      const info = el("div", "ct-info");
+      info.append(el("span", "mono", `Candidature ${i + 1}`), el("b", "", c.entreprise || "Employeur"), el("span", "ct-poste", `${c.titre || ""}${c.ville ? " · " + c.ville : ""}`));
+      const notes = el("div", "ct-notes");
+      const ia = el("div", "pastille-note ia"); ia.append(el("small", "", "Note de l'IA"), el("b", "", c.note_ia === null ? "—" : `${c.note_ia}/20`));
+      notes.append(ia);
+      if (c.note !== null && c.note !== undefined) {
+        const moi = el("div", "pastille-note moi"); moi.append(el("small", "", "Ta note"), el("b", "", `${c.note}/20`)); notes.append(moi);
+      } else if (["en_cours", "a_noter"].includes(t.statut)) {
+        const b = el("button", "bouton petit noter", "Noter"); b.type = "button";
+        b.onclick = () => { b.replaceWith(curseurNote(14, (n) => commandeTest("/api/test/noter", { offre_id: c.id, note: n }, `Noté ${n}/20 ✓`))); };
+        notes.append(b);
+      }
+      ligne.append(info, notes); liste.append(ligne);
+    });
+    for (let k = t.candidatures.length; k < t.taille && t.statut === "en_cours"; k++) {
+      const vide = el("div", "ct-ligne attente"); vide.append(el("span", "ecrit-mini"), el("span", "petit-texte", `Candidature ${k + 1} en préparation…`));
+      liste.append(vide);
+    }
+    zone.append(liste);
+  }
+
+
   if (t.statut === "attente_accord") {
-    const choix = document.createElement("div"); choix.className = "choix";
-    [["✅ Oui, envoie aux recruteurs", "autoriser envoi"], ["🔁 Encore un test", "refaire un test"]].forEach(([l, c]) => {
-      const x = document.createElement("button"); x.type = "button"; x.textContent = l; x.onclick = () => { envoyer(c, l); montrer("discussion"); }; choix.append(x);
+    const choix = el("div", "choix");
+    [["✅ Postuler pour de vrai", "autoriser envoi"], ["🔁 Encore un test", "refaire un test"]].forEach(([l, c]) => {
+      const x = el("button", "", l); x.type = "button"; x.onclick = () => { envoyer(c, l); montrer("discussion"); }; choix.append(x);
     });
     zone.append(choix);
   }
+
+  // Ses exigences, gardées pour toujours
+  if ((t.exigences || []).length) {
+    const ex = el("div", "exigences"); ex.append(el("span", "mono", "Tes exigences, gardées pour toujours"));
+    const ul = el("ul"); t.exigences.slice().reverse().forEach((x) => ul.append(el("li", "", x.texte))); ex.append(ul);
+    zone.append(ex);
+  }
+}
+
+function formulaireRetour() {
+  const f = el("form", "retour");
+  f.append(el("b", "", "Qu'est-ce qui n'a pas été ?"),
+    el("p", "petit-texte serre", "Le style, le ton, la longueur, ce qui manque… Ton agent le retient pour toutes tes candidatures, puis refait un test."));
+  const z = el("textarea"); z.maxLength = 2000; z.required = true; z.placeholder = "Ex. : trop formel, parle davantage de mon stage, lettres plus courtes…";
+  z.setAttribute("aria-label", "Ce qui n'a pas été");
+  const ok = el("button", "bouton vert", "Envoyer et refaire un test"); ok.type = "submit";
+  f.append(z, ok);
+  f.onsubmit = (ev) => {
+    ev.preventDefault(); if (z.value.trim().length < 3) return;
+    ok.disabled = true; commandeTest("/api/test/retour", { texte: z.value.trim() }, "Merci ! C'est noté pour toujours.");
+  };
+  return f;
 }
 
 // ---------- Réglages ----------
