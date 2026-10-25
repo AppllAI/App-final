@@ -3,7 +3,7 @@
 "use strict";
 window.DEMO = (() => {
   const etat = { moi: [], agent: [], idMoi: 0, idAgent: 0, utilisateur: null, cand: [],
-                 test: { tour: 1, statut: "a_lancer", ids: [], notes: {}, historique: [], exigences: [] } };
+                 test: { tour: 1, statut: "a_lancer", ids: [], note: null, criteres: [], commentaire: "", historique: [], exigences: [] } };
   const maintenant = () => new Date().toISOString().replace("T", " ").slice(0, 19);
   const dit = (texte, extra = {}) => etat.agent.push({ id: ++etat.idAgent, genre: "texte", texte, boutons: null,
     fichier: false, nom_fichier: null, legende: null, le: maintenant(), ...extra });
@@ -16,57 +16,68 @@ window.DEMO = (() => {
   ];
 
   function proposerTest() {
-    dit(`J'ai tout ce qu'il me faut 👍 Veux-tu que je lance le test maintenant ?\nJe prépare 3 candidatures et je les envoie sur *ton* adresse (${etat.utilisateur.email}), pas chez les recruteurs : c'est juste pour que tu les juges et que tu les notes.`,
+    dit(`J'ai tout ce qu'il me faut 👍 Prochaine étape : le *test*.\n1️⃣ Je prépare 3 candidatures et je les envoie sur *ton* adresse (${etat.utilisateur.email}), jamais chez les recruteurs.\n2️⃣ Quand les 3 sont arrivées, je te préviens (ici et par email).\n3️⃣ Tu les lis et tu leur donnes *une note globale* sur 20. À partir de 15/20, je te propose de postuler pour de vrai.\nOn lance ?`,
       { boutons: [[bouton("▶️ Lancer le test", "lancer le test"), bouton("Plus tard", "plus tard")]] });
   }
 
   function lancerTest() {
     if (etat.test.statut !== "a_lancer" && etat.test.statut !== "en_cours") return;
-    etat.test.statut = "en_cours"; etat.test.ids = []; etat.test.notes = {};
-    dit(`C'est parti 🧪 Je cherche les offres et j'écris tes candidatures. Tu les recevras sur ${etat.utilisateur.email} au fur et à mesure.`);
+    etat.test.statut = "en_cours"; etat.test.ids = []; etat.test.note = null;
+    dit(`C'est parti 🧪 Je cherche les offres et j'écris tes 3 candidatures de test. Elles arrivent sur ${etat.utilisateur.email} au fur et à mesure ; quand les 3 seront là, je te préviens pour la note.`);
     OFFRES.forEach((o, k) => plusTard(2500 * (k + 1), () => {
       etat.test.ids.push(o.id);
       etat.cand = OFFRES.slice(0, k + 1).map((x) => ({ ...x, statut: "repetee", score: 9 }));
       if (k === 0) dit("📄 Lettre de motivation (PDF) — Cabinet Lumen", { genre: "fichier", fichier: true, nom_fichier: "Lettre_de_motivation_demo.pdf", legende: "Lettre – Cabinet Lumen" });
       if (k === OFFRES.length - 1) {
         etat.test.statut = "a_noter";
-        dit(`🧪 Test n°${etat.test.tour} prêt : 3 candidatures sur ${etat.utilisateur.email}, exactement comme un recruteur les recevrait.\nNote *chacune* sur 20 dans l'onglet *Phase de test*.`, { genre: "notation" });
+        dit(`🧪 Test n°${etat.test.tour} terminé : tes 3 candidatures sont sur ${etat.utilisateur.email}, exactement comme un recruteur les recevrait (rien n'est parti chez eux).\nÀ toi : lis-les, puis donne *une note globale* sur 20 et coche ce qui n'allait pas. Je t'ai aussi envoyé un email.`, { genre: "notation" });
       }
     }));
   }
 
-  function moyenne() {
-    const n = etat.test.ids.map((i) => etat.test.notes[i]).filter((x) => x !== undefined);
-    return n.length ? Math.round((n.reduce((a, b) => a + b, 0) / n.length) * 10) / 10 : null;
-  }
+  const CRITERES = { trop_long: "plus court, à l'essentiel", trop_court: "plus développé, avec des exemples concrets",
+    ton: "un ton adapté aux cabinets", pas_perso: "plus personnalisé pour chaque cabinet", erreur: "chaque fait vérifié",
+    fautes: "relu phrase par phrase", offres: "des offres plus proches de ce que tu cherches" };
 
-  function noter(id, note) {
-    etat.test.notes[id] = note;
-    if (!etat.test.ids.every((i) => etat.test.notes[i] !== undefined) || etat.test.ids.length < 3) return;
-    const m = moyenne();
-    if (m >= 15) {
+  function noterGlobal(note, criteres = [], commentaire = "") {
+    if (etat.test.statut !== "a_noter") return;
+    Object.assign(etat.test, { note, criteres, commentaire });
+    if (note >= 15) {
       etat.test.statut = "attente_accord";
-      return dit(`🎉 Moyenne de ${m}/20 : la qualité est au rendez-vous.\nOn quitte la phase de test et je commence à postuler pour de vrai, depuis ton Gmail ?`,
+      etat.test.historique.push({ tour: etat.test.tour, note, criteres, retour: commentaire });
+      return dit(`🎉 ${note}/20 : la qualité est au rendez-vous.\nOn quitte la phase de test et je commence à postuler pour de vrai, depuis ton Gmail ?`,
         { boutons: [[bouton("✅ Oui, postuler pour de vrai", "autoriser envoi"), bouton("🔁 Encore un test", "refaire un test")]] });
     }
-    etat.test.statut = "retour";
-    dit(`Oups, la moyenne est de ${m}/20 : en dessous de 15/20.\nAvant de continuer, dis-moi ce qui n'a pas été : le style, le ton, la longueur, ce qui manque… Je le retiens pour toujours.`, { genre: "retour" });
+    if (!criteres.length && !commentaire) {
+      etat.test.statut = "retour";
+      return dit(`Oups, ${note}/20 : en dessous de 15/20.\nAvant de continuer, dis-moi ce qui n'a pas été : le style, le ton, la longueur, ce qui manque… Je le retiens pour toujours.`, { genre: "retour" });
+    }
+    corriger(criteres, commentaire);
   }
 
-  function retour(texte) {
-    etat.test.exigences.push({ le: maintenant().slice(0, 10), texte });
-    etat.test.historique.push({ tour: etat.test.tour, moyenne: moyenne(), retour: texte });
-    etat.test.tour += 1; etat.test.statut = "a_lancer";
-    dit(`C'est noté, et gardé pour toutes tes prochaines candidatures ✍️\n« ${texte} »\nJe réécris les candidatures : tu reçois le test n°${etat.test.tour} dans quelques instants.`);
-    etat.test.statut = "en_cours"; etat.test.ids = []; etat.test.notes = {}; etat.cand = [];
-    plusTard(500, () => { etat.test.statut = "a_lancer"; lancerTest(); });
+  function corriger(criteres, commentaire) {
+    const consignes = criteres.map((c) => CRITERES[c]).filter(Boolean);
+    if (commentaire) consignes.push(`« ${commentaire} »`);
+    etat.test.exigences.push({ le: maintenant().slice(0, 10), texte: commentaire || consignes.join(", ") });
+    etat.test.historique.push({ tour: etat.test.tour, note: etat.test.note, criteres, retour: commentaire });
+    etat.test.tour += 1;
+    dit(`Compris, et gardé pour toujours ✍️ Voici ce que je change pour toutes tes prochaines candidatures :\n${consignes.map((c) => "• " + c).join("\n")}\nJe prépare le test n°${etat.test.tour} : 3 candidatures réécrites, et je te préviens quand elles sont toutes arrivées.`);
+    etat.test.statut = "a_lancer"; etat.cand = [];
+    plusTard(500, lancerTest);
   }
+
+  function retour(texte) { if (etat.test.statut === "retour") corriger(etat.test.criteres || [], texte); }
 
   function vueTest() {
     const c = etat.test.ids.map((i) => { const o = OFFRES.find((x) => x.id === i);
-      return { id: o.id, titre: o.titre, entreprise: o.entreprise, ville: o.ville, note_ia: Math.round(o.note_lettre * 2), note: etat.test.notes[i] ?? null }; });
-    return { tour: etat.test.tour, statut: etat.test.statut, candidatures: c, moyenne: moyenne(), taille: 3,
-             historique: etat.test.historique, exigences: etat.test.exigences };
+      return { id: o.id, titre: o.titre, entreprise: o.entreprise, ville: o.ville, note_ia: Math.round(o.note_lettre * 2) }; });
+    const ia = c.map((x) => x.note_ia);
+    return { tour: etat.test.tour, statut: etat.test.statut, candidatures: c, note: etat.test.note, criteres: etat.test.criteres,
+             commentaire: etat.test.commentaire, note_ia: ia.length ? Math.round(ia.reduce((a, b) => a + b, 0) / ia.length) : null,
+             taille: 3, historique: etat.test.historique, exigences: etat.test.exigences,
+             criteres_possibles: [["trop_long", "Trop long"], ["trop_court", "Pas assez développé"], ["ton", "Ton pas adapté"],
+               ["pas_perso", "Pas assez personnalisé"], ["erreur", "Erreur ou invention"], ["fautes", "Fautes ou tournures maladroites"],
+               ["offres", "Offres pas pertinentes"]].map(([code, libelle]) => ({ code, libelle })) };
   }
 
   function repondre(texte) {
@@ -75,7 +86,9 @@ window.DEMO = (() => {
     if (t === "plus tard") return dit("Pas de souci. Quand tu veux, touche « Lancer le test ».", { boutons: [[bouton("▶️ Lancer le test", "lancer le test")]] });
     if (t.includes("autoriser")) { etat.test.statut = "reussi"; return dit("C'est parti 🚀 Phase de test réussie : je postule pour de vrai, depuis ton Gmail."); }
     if (t.includes("refaire")) { etat.test.tour += 1; etat.test.statut = "a_lancer"; return lancerTest(); }
-    if (t === "test") return dit("Ouvre l'onglet *Phase de test* : tu y notes chaque candidature.");
+    if (t === "test") return dit("Ouvre l'onglet *Phase de test* : tu y donnes ta note globale aux 3 candidatures.");
+    const m = /^note\s*:?\s*(\d{1,2})\s*(?:\/\s*20)?\s*[:,.-]?\s*(.*)$/i.exec(texte.trim());
+    if (m && etat.test.statut === "a_noter") return noterGlobal(Math.min(20, +m[1]), [], m[2] === "pas de commentaire" ? "" : m[2]);
     if (t.includes("souviens")) return dit("Oui : le 21/10 tu m'as parlé du cabinet Verhaegen à Namur, tu préfères les cabinets de taille moyenne. Je les privilégie.");
     if (/immobilier|bruxelles|stage|juriste|cherche|job|vente/.test(t)) {
       dit("Noté 👍 Récap : stage ou juriste en droit immobilier, à Bruxelles, sans pénal.");
@@ -107,7 +120,7 @@ window.DEMO = (() => {
           + "*Comment ça marche, étape par étape :*\n1️⃣ *Ton CV* : envoie-le en PDF avec le trombone 📎.\n"
           + "2️⃣ *Ce que tu cherches* : dis-moi le poste, les matières, les villes, ce que tu refuses et ta date de début.\n"
           + `3️⃣ *Le test* : quand j'ai tout, je te propose de le lancer. Je prépare 3 candidatures et je les envoie sur *ton* adresse (${e}), jamais chez un cabinet.\n`
-          + "4️⃣ *Tes notes* : tu notes chacune sur 20 dans l'onglet *Phase de test*. Moyenne d'au moins 15/20 : je te propose de postuler pour de vrai. Sinon, tu me dis ce qui ne va pas, je le retiens pour toujours et je refais un test.\n"
+          + "4️⃣ *Ta note* : quand les 3 sont arrivées, je te préviens (ici et par email). Tu leur donnes *une note globale* sur 20 dans l'onglet *Phase de test*. À partir de 15/20, je te propose de postuler pour de vrai. Sinon, tu me dis ce qui ne va pas, je le retiens pour toujours et je refais un test.\n"
           + "5️⃣ *Pour de vrai* : je postule depuis ton Gmail, je relance, je trie les réponses et je te préviens pour les entretiens.\n\n"
           + "*Ensuite, parle-moi normalement*, par exemple :\n• « plus de droit fiscal », « ajoute Liège » → je change ta recherche\n• « trop long », « moins formel » → je le retiens pour toutes tes lettres");
         return { ok: true };
@@ -131,7 +144,7 @@ window.DEMO = (() => {
       if (chemin === "/api/candidatures") return etat.cand;
       if (chemin === "/api/test") return vueTest();
       if (chemin === "/api/test/lancer") { lancerTest(); return { ok: true }; }
-      if (chemin === "/api/test/noter") { noter(corps.offre_id, corps.note); return { ok: true }; }
+      if (chemin === "/api/test/noter") { noterGlobal(corps.note, corps.criteres || [], corps.commentaire || ""); return { ok: true }; }
       if (chemin === "/api/test/retour") { retour(corps.texte); return { ok: true }; }
       if (chemin === "/api/tableau") {
         const tests = etat.test.ids.length, envoyees = etat.test.statut === "reussi" ? 4 : 0;
