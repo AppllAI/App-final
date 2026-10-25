@@ -174,16 +174,19 @@ function initApp() {
   $("#adresse-agent").textContent = utilisateur.adresse_agent || "";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
-  montrer("accueil");
+  const depart = location.hash.slice(1);                  // lien de l'email « à toi de noter » : …/app.html#test
+  montrer(VUES.includes(depart) ? depart : "accueil");
   rafraichir();
   clearInterval(minuteur);
   minuteur = setInterval(() => { if (!document.hidden) rafraichir(); }, 2500);
 }
 
+const VUES = ["accueil", "discussion", "candidatures", "test", "reglages"];
 function montrer(vue) {
   vueActive = vue;
+  if (location.hash.slice(1) !== vue) history.replaceState(null, "", "#" + vue);
   document.querySelectorAll(".onglet").forEach((o) => o.setAttribute("aria-selected", String(o.dataset.vue === vue)));
-  for (const v of ["accueil", "discussion", "candidatures", "test", "reglages"]) $("#vue-" + v).hidden = v !== vue;
+  for (const v of VUES) $("#vue-" + v).hidden = v !== vue;
   $("#saisie").hidden = vue !== "discussion";
   $("#titre-vue").textContent = { accueil: "Accueil", discussion: "Discussion", candidatures: "Candidatures", test: "Phase de test", reglages: "Réglages" }[vue];
   if (vue === "accueil") afficherTableau();
@@ -214,9 +217,8 @@ async function rafraichir() {
   if (nouveaux.length) defiler();
   if (vueActive === "accueil" && Date.now() - (window._dernierTableau || 0) > 15000) { window._dernierTableau = Date.now(); afficherTableau(); }
   // Onglet test ouvert : on suit l'arrivée des candidatures (sans effacer une note en cours de saisie)
-  if (vueActive === "test" && !document.querySelector("#carte-test .note-inline, #carte-test .retour textarea:focus")
-      && !(document.querySelector("#carte-test .retour textarea") || {}).value
-      && Date.now() - (window._dernierTest || 0) > 5000) { window._dernierTest = Date.now(); afficherTest(false); }
+  if (vueActive === "test" && !document.querySelector("#carte-test form.retour[data-touche]")
+      && Date.now() - (window._dernierTest || 0) > 3000) { window._dernierTest = Date.now(); afficherTest(false); }
 }
 
 function heure(le) { return le ? le.slice(11, 16) : ""; }
@@ -248,7 +250,7 @@ function afficherMessage(m) {
   }
   fil.append(b);
   if (m.role === "agent" && m.genre === "notation") {
-    const b = el("button", "bouton noter", "🧪 Noter mes candidatures"); b.type = "button"; b.onclick = () => montrer("test"); fil.append(b);
+    const b = el("button", "bouton noter", "🧪 Donner ma note globale"); b.type = "button"; b.onclick = () => montrer("test"); fil.append(b);
   }
   if (m.role === "agent" && m.genre === "retour") fil.append(formulaireRetour());
 }
@@ -323,14 +325,12 @@ async function afficherTableau() {
   for (const r of (t.rdv || []).filter((x) => x.statut === "propose"))
     carteAction(`Entretien proposé · ${r.entreprise || "un employeur"}`, `${joliRdv(r.debut)}${r.lieu ? " · " + r.lieu : ""}. Tu es d'accord ?`,
       "Répondre", () => montrer("discussion"));
-  if (test && test.statut === "a_lancer") carteAction("Lance ta phase de test", `3 candidatures arriveront sur ${utilisateur.email}, pour que tu les notes.`, "Voir", () => montrer("test"));
-  const cands = (test && test.candidatures) || [];
-  const aNoter = cands.filter((c) => c.note === null || c.note === undefined).length;
-  if (test && test.statut === "a_noter" && !test.candidatures) carteAction("Test à noter", "Tes candidatures de test t'attendent sur ton email.", "Noter", () => montrer("test"));
-  if (test && ["en_cours", "a_noter"].includes(test.statut) && aNoter && cands.length)
-    carteAction(`${aNoter} candidature${aNoter > 1 ? "s" : ""} à noter`, "Elles sont dans ta boîte mail. Donne une note sur 20 à chacune.", "Noter", () => montrer("test"));
-  if (test && test.statut === "retour") carteAction("Dis-lui ce qui n'a pas été", "La moyenne est sous 15/20 : tes remarques, puis il refait un test.", "Répondre", () => montrer("test"));
-  if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Moyenne ≥ 15/20 : tu peux passer aux vraies candidatures.", "Décider", () => montrer("test"));
+  if (test && test.statut === "a_lancer") carteAction("Lance ta phase de test", `3 candidatures arriveront sur ${utilisateur.email}, puis tu leur donneras une note globale.`, "Voir", () => montrer("test"));
+  const nb = ((test && test.candidatures) || []).length;
+  if (test && test.statut === "en_cours") carteAction(`Test en cours · ${nb}/3`, "Ton agent envoie les 3 candidatures sur ton email. Tu es prévenu quand elles sont toutes là.", "Suivre", () => montrer("test"));
+  if (test && test.statut === "a_noter") carteAction("Tes 3 candidatures sont arrivées", "Lis-les dans ta boîte mail, puis donne-leur une note globale sur 20.", "Noter", () => montrer("test"));
+  if (test && test.statut === "retour") carteAction("Dis-lui ce qui n'a pas été", "La note est sous 15/20 : tes remarques, puis il refait un test.", "Répondre", () => montrer("test"));
+  if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Note ≥ 15/20 : tu peux passer aux vraies candidatures.", "Décider", () => montrer("test"));
 
   // Chiffres clés
   const cartes = $("#cartes-chiffres"); cartes.textContent = "";
@@ -382,31 +382,47 @@ async function afficherCandidatures() {
   }
 }
 
-// ---------- Phase de test : une note par candidature, la moyenne décide ----------
+// ---------- Phase de test : d'abord 3 candidatures, ensuite UNE note globale ----------
 const LIBELLES_TEST = {
-  a_lancer: ["Pas encore lancé", "Quand ton agent a ton CV et sait ce que tu cherches, lance le test : 3 candidatures arrivent sur ton email, rien chez les recruteurs."],
-  en_cours: ["Test en préparation", "Ton agent cherche des offres et écrit tes candidatures. Tu peux noter chacune dès qu'elle arrive."],
-  a_noter: ["À toi de noter", "Lis les candidatures reçues sur ton email, puis note chacune sur 20."],
-  retour: ["Dis-lui ce qui n'a pas été", "La moyenne est sous 15/20. Tes remarques sont gardées pour toutes tes futures candidatures."],
-  attente_accord: ["Test réussi 🎉", "La moyenne dépasse 15/20. Tu peux passer aux vraies candidatures."],
+  a_lancer: ["Pas encore lancé", "Ton agent prépare 3 candidatures et les envoie sur ton email (jamais chez un recruteur). Ensuite, tu leur donnes une note globale."],
+  en_cours: ["Envoi des candidatures", "Ton agent cherche des offres et écrit tes 3 candidatures. Tu es prévenu ici et par email quand elles sont toutes arrivées."],
+  a_noter: ["À toi de noter", "Les 3 candidatures sont dans ta boîte mail. Lis-les, puis donne-leur une note globale sur 20."],
+  retour: ["Dis-lui ce qui n'a pas été", "La note est sous 15/20. Tes remarques sont gardées pour toutes tes futures candidatures."],
+  attente_accord: ["Test réussi", "Ta note atteint 15/20. Tu peux passer aux vraies candidatures."],
   reussi: ["Phase de test réussie", "Ton agent postule pour de vrai, depuis ton Gmail."],
 };
+// Si le serveur ne les donne pas (version précédente), les mêmes cases que lui
+const CRITERES_TEST = [["trop_long", "Trop long"], ["trop_court", "Pas assez développé"], ["ton", "Ton pas adapté"],
+  ["pas_perso", "Pas assez personnalisé"], ["erreur", "Erreur ou invention"], ["fautes", "Fautes ou tournures maladroites"],
+  ["offres", "Offres pas pertinentes"]].map(([code, libelle]) => ({ code, libelle }));
 
 function commandeTest(chemin, corps, message) {
   return appel(chemin, { methode: "POST", corps }).then(() => { if (message) toast(message); setTimeout(afficherTest, 1800); })
     .catch((e) => toast(e.message));
 }
 
-function curseurNote(valeur, surValider) {
-  const f = el("form", "note-inline");
+function curseurNote(valeur) {
+  const f = el("div", "note-inline");
   const chiffre = el("div", "chiffre-note");
-  const r = el("input"); r.type = "range"; r.min = 0; r.max = 20; r.value = valeur ?? 14; r.setAttribute("aria-label", "Ta note sur 20");
+  const r = el("input"); r.type = "range"; r.min = 0; r.max = 20; r.value = valeur ?? 14; r.setAttribute("aria-label", "Ta note globale sur 20");
   const maj = () => { chiffre.textContent = r.value; chiffre.append(el("small", "", "/20")); chiffre.classList.toggle("ok", +r.value >= 15); };
   r.oninput = maj; maj();
-  const ok = el("button", "bouton petit vert", "Valider"); ok.type = "submit";
-  f.append(chiffre, r, ok);
-  f.onsubmit = (ev) => { ev.preventDefault(); ok.disabled = true; surValider(+r.value); };
+  f.append(chiffre, r);
   return f;
+}
+
+// Les 3 étapes, toujours visibles : on sait où on en est et ce qui vient après
+function etapesTest(t) {
+  const rang = { a_lancer: 0, en_cours: 0, a_noter: 1, retour: 1, attente_accord: 2, reussi: 3 }[t.statut] ?? 0;
+  const ol = el("ol", "etapes-test");
+  [[`Envoi des ${t.taille} candidatures`, `${t.candidatures.length}/${t.taille} sur ton email`],
+   ["Ta note globale", t.note === null || t.note === undefined ? "sur 20, les 3 ensemble" : `${t.note}/20`],
+   ["Pour de vrai", "à partir de 15/20, avec ton accord"]].forEach(([titre, detail], k) => {
+    const li = el("li", k < rang ? "fait" : k === rang ? "actuelle" : "");
+    li.append(el("span", "pastille-etape", k < rang ? "✓" : String(k + 1)), el("b", "", titre), el("small", "", detail));
+    ol.append(li);
+  });
+  return ol;
 }
 
 let dernierTest = "";
@@ -415,29 +431,34 @@ async function afficherTest(force = true) {
   let t;
   try { t = await appel("/api/test"); } catch (e) { return toast(e.message); }
   if (!t) return;
-  // Serveur pas encore mis à jour (ancien format : une note globale par test) : on s'adapte
-  const ancien = !Array.isArray(t.candidatures);
-  t = { taille: 3, exigences: [], historique: [], moyenne: null, ...t, candidatures: t.candidatures || [] };
-  if (ancien && t.notes && t.notes.length) t.moyenne = t.notes[t.notes.length - 1].note;
+  // Serveur de la version précédente (note par candidature, ou note globale par message) : on s'adapte
+  const moderne = Array.isArray(t.criteres_possibles);
+  if (!moderne) {
+    const notes = (t.candidatures || []).map((c) => c.note).filter((n) => n !== null && n !== undefined);
+    t.note = t.moyenne ?? (t.notes && t.notes.length ? t.notes[t.notes.length - 1].note : null) ?? (notes.length ? notes[0] : null);
+  }
+  t = { taille: 3, exigences: [], historique: [], note: null, ...t, candidatures: t.candidatures || [],
+        criteres_possibles: t.criteres_possibles || CRITERES_TEST };
   const empreinte = JSON.stringify(t);
   if (!force && empreinte === dernierTest) return;          // rien de neuf : on ne redessine pas (pas de clignotement)
+  // Une note ou des remarques en cours de saisie : on ne les efface pas
   dernierTest = empreinte;
   zone.textContent = "";
   const [titre, sous] = LIBELLES_TEST[t.statut] || ["Phase de test", ""];
 
-  // En-tête : où on en est + la moyenne sur la jauge
+  // En-tête : où on en est + la note globale sur la jauge
   const tete = el("div", "test-tete");
   const g = el("div"); g.append(el("span", "mono", `Test n°${t.tour}`), el("h3", "", titre), el("p", "petit-texte serre", sous));
-  const moy = el("div", "moyenne" + (t.moyenne !== null && t.moyenne >= 15 ? " ok" : ""));
-  moy.append(el("strong", "", t.moyenne === null ? "—" : String(t.moyenne).replace(".", ",")), el("small", "", "/20 de moyenne"));
-  tete.append(g, moy);
-  const regle = el("div", "regle"); const plein = el("div", "remplissage" + (t.moyenne >= 15 ? " ok" : ""));
-  plein.style.setProperty("width", `${((t.moyenne || 0) / 20) * 100}%`);
+  const note = el("div", "moyenne" + (t.note !== null && t.note >= 15 ? " ok" : ""));
+  note.append(el("strong", "", t.note === null ? "—" : String(t.note)), el("small", "", "/20 · ta note"));
+  tete.append(g, note);
+  const regle = el("div", "regle"); const plein = el("div", "remplissage" + (t.note >= 15 ? " ok" : ""));
+  plein.style.setProperty("width", `${((t.note || 0) / 20) * 100}%`);
   const seuil = el("div", "seuil"); seuil.append(el("span", "", "15/20"));
   regle.append(plein, seuil);
-  zone.append(tete, regle);
-  if (t.statut === "retour") zone.append(formulaireRetour());   // d'abord ce qu'on attend d'elle
-  if (ancien && t.statut === "a_noter") zone.append(formulaireNoteGlobale());
+  zone.append(tete, etapesTest(t), regle);
+  if (t.statut === "a_noter") zone.append(formulaireNote(t, moderne));   // d'abord ce qu'on attend de la personne
+  if (t.statut === "retour") zone.append(formulaireRetour());
 
   if (t.statut === "a_lancer") {
     const b = el("button", "bouton vert large", "▶  Lancer le test");
@@ -446,7 +467,7 @@ async function afficherTest(force = true) {
     zone.append(b, p);
   }
 
-  // Les candidatures du test, une par une
+  // Les candidatures du test (la note de l'IA à côté, pour comparer avec ton avis)
   if (t.candidatures.length || t.statut === "en_cours") {
     const liste = el("div", "cand-test");
     t.candidatures.forEach((c, i) => {
@@ -454,15 +475,8 @@ async function afficherTest(force = true) {
       const info = el("div", "ct-info");
       info.append(el("span", "mono", `Candidature ${i + 1}`), el("b", "", c.entreprise || "Employeur"), el("span", "ct-poste", `${c.titre || ""}${c.ville ? " · " + c.ville : ""}`));
       const notes = el("div", "ct-notes");
-      const ia = el("div", "pastille-note ia"); ia.append(el("small", "", "Note de l'IA"), el("b", "", c.note_ia === null ? "—" : `${c.note_ia}/20`));
+      const ia = el("div", "pastille-note ia"); ia.append(el("small", "", "Note de l'IA"), el("b", "", c.note_ia === null || c.note_ia === undefined ? "—" : `${c.note_ia}/20`));
       notes.append(ia);
-      if (c.note !== null && c.note !== undefined) {
-        const moi = el("div", "pastille-note moi"); moi.append(el("small", "", "Ta note"), el("b", "", `${c.note}/20`)); notes.append(moi);
-      } else if (["en_cours", "a_noter"].includes(t.statut)) {
-        const b = el("button", "bouton petit noter", "Noter"); b.type = "button";
-        b.onclick = () => { b.replaceWith(curseurNote(14, (n) => commandeTest("/api/test/noter", { offre_id: c.id, note: n }, `Noté ${n}/20 ✓`))); };
-        notes.append(b);
-      }
       ligne.append(info, notes); liste.append(ligne);
     });
     for (let k = t.candidatures.length; k < t.taille && t.statut === "en_cours"; k++) {
@@ -472,7 +486,6 @@ async function afficherTest(force = true) {
     zone.append(liste);
   }
 
-
   if (t.statut === "attente_accord") {
     const choix = el("div", "choix");
     [["✅ Postuler pour de vrai", "autoriser envoi"], ["🔁 Encore un test", "refaire un test"]].forEach(([l, c]) => {
@@ -481,7 +494,16 @@ async function afficherTest(force = true) {
     zone.append(choix);
   }
 
-  // Ses exigences, gardées pour toujours
+  // Les tests précédents et ses exigences, gardées pour toujours
+  if ((t.historique || []).length) {
+    const h = el("div", "exigences"); h.append(el("span", "mono", "Tests précédents"));
+    const ul = el("ul");
+    t.historique.slice().reverse().forEach((x) => {
+      const n = x.note ?? x.moyenne;
+      ul.append(el("li", "", `Test n°${x.tour} : ${n === null || n === undefined ? "—" : n + "/20"}${x.retour ? " — " + x.retour : ""}`));
+    });
+    h.append(ul); zone.append(h);
+  }
   if ((t.exigences || []).length) {
     const ex = el("div", "exigences"); ex.append(el("span", "mono", "Tes exigences, gardées pour toujours"));
     const ul = el("ul"); t.exigences.slice().reverse().forEach((x) => ul.append(el("li", "", x.texte))); ex.append(ul);
@@ -489,19 +511,32 @@ async function afficherTest(force = true) {
   }
 }
 
-// Note globale du test (« note 14 : trop formel ») : toujours comprise par l'agent, utile avec un serveur ancien
-function formulaireNoteGlobale() {
-  const f = el("form", "retour");
-  f.append(el("b", "", "Ta note pour ce test"));
-  const ligne = curseurNote(14, () => {});
-  ligne.querySelector("button").remove();
-  const z = el("textarea"); z.maxLength = 1500; z.placeholder = "Ce que tu as aimé, ce que tu as moins aimé (ton, longueur, ce qui manque…)";
+// La note globale : un curseur, ce qui n'allait pas en un clic, et ses mots
+function formulaireNote(t, moderne) {
+  const f = el("form", "retour note-globale");
+  f.append(el("b", "", "Ta note globale pour ces 3 candidatures"),
+    el("p", "petit-texte serre", "À partir de 15/20, tu pourras passer aux vraies candidatures. En dessous, ton agent corrige et refait un test."));
+  const curseur = curseurNote(14);
+  const cases = el("fieldset", "puces");
+  cases.append(el("legend", "", "Ce qui n'allait pas (facultatif)"));
+  t.criteres_possibles.forEach((c) => {
+    const lab = el("label", "puce"); const x = el("input"); x.type = "checkbox"; x.value = c.code;
+    lab.append(x, el("span", "", c.libelle)); cases.append(lab);
+  });
+  const z = el("textarea"); z.maxLength = 2000; z.placeholder = "Avec tes mots (facultatif) : ce que tu as aimé, ce qui manque, ce qui sonne faux…";
   z.setAttribute("aria-label", "Ton avis");
-  const ok = el("button", "bouton vert", "Envoyer ma note"); ok.type = "submit";
-  f.append(ligne, z, ok);
+  const ok = el("button", "bouton vert large", "Envoyer ma note"); ok.type = "submit";
+  f.append(curseur, cases, z, ok);
+  f.oninput = () => { f.dataset.touche = "1"; };              // en cours de saisie : le rafraîchissement attend
   f.onsubmit = (ev) => {
-    ev.preventDefault(); const n = ligne.querySelector("input").value;
-    envoyer(`note ${n} : ${z.value.trim() || "pas de commentaire"}`); f.remove(); montrer("discussion");
+    ev.preventDefault(); ok.disabled = true;
+    const note = +curseur.querySelector("input").value;
+    const criteres = [...cases.querySelectorAll("input:checked")].map((x) => x.value);
+    const mots = z.value.trim();
+    if (moderne) return commandeTest("/api/test/noter", { note, criteres, commentaire: mots }, `Noté ${note}/20 ✓`);
+    // Serveur de la version précédente : la note passe par la discussion (« note 14 : … »), qu'il comprend
+    const libelles = criteres.map((c) => (t.criteres_possibles.find((x) => x.code === c) || {}).libelle).filter(Boolean);
+    envoyer(`note ${note} : ${[...libelles, mots].filter(Boolean).join(", ") || "pas de commentaire"}`); montrer("discussion");
   };
   return f;
 }
@@ -514,6 +549,7 @@ function formulaireRetour() {
   z.setAttribute("aria-label", "Ce qui n'a pas été");
   const ok = el("button", "bouton vert", "Envoyer et refaire un test"); ok.type = "submit";
   f.append(z, ok);
+  f.oninput = () => { f.dataset.touche = "1"; };
   f.onsubmit = (ev) => {
     ev.preventDefault(); if (z.value.trim().length < 3) return;
     ok.disabled = true; commandeTest("/api/test/retour", { texte: z.value.trim() }, "Merci ! C'est noté pour toujours.");
