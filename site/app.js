@@ -49,7 +49,7 @@ function toast(texte) {
 }
 
 function ecran(nom) {
-  for (const id of ["ecran-connexion", "ecran-autorisation", "ecran-agents", "ecran-audace", "ecran-app"]) $("#" + id).hidden = id !== nom;
+  for (const id of ["ecran-connexion", "ecran-autorisation", "ecran-agents", "ecran-audace", "ecran-app", "ecran-admin"]) $("#" + id).hidden = id !== nom;
 }
 
 // ---------- Texte enrichi sûr : *gras* et liens, construits en DOM ----------
@@ -224,6 +224,7 @@ function initAudace() {
 
 // ---------- Application ----------
 function suite() {
+  if (utilisateur.admin) return initAdmin();           // l'administrateur ne postule pas : il suit les bêta-testeurs
   if (!utilisateur.gmail_ok) return initAutorisation();
   if (!utilisateur.agent) initAgents(); else initApp();
 }
