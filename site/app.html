@@ -72,7 +72,8 @@
 <div class="coque" id="ecran-app" hidden>
   <aside class="cote" role="tablist" aria-label="Sections">
     <a class="logo" href="./"><img class="logo-marque" src="icones/logo.svg" alt="" width="28" height="28"><span class="mot">appl<span class="accent">ai</span></span></a>
-    <button class="onglet" role="tab" data-vue="discussion" aria-selected="true"><span class="icone">💬</span>Discussion<span class="pastille" id="pastille" hidden>0</span></button>
+    <button class="onglet" role="tab" data-vue="accueil" aria-selected="true"><span class="icone">🏠</span>Accueil</button>
+    <button class="onglet" role="tab" data-vue="discussion" aria-selected="false"><span class="icone">💬</span>Discussion<span class="pastille" id="pastille" hidden>0</span></button>
     <button class="onglet" role="tab" data-vue="candidatures" aria-selected="false"><span class="icone">📄</span>Candidatures</button>
     <button class="onglet" role="tab" data-vue="test" aria-selected="false"><span class="icone">🧪</span>Phase de test</button>
     <button class="onglet" role="tab" data-vue="reglages" aria-selected="false"><span class="icone">⚙️</span>Réglages</button>
@@ -81,6 +82,18 @@
   <main class="principal">
     <div class="barre"><h2 id="titre-vue">Discussion</h2><span class="etat etiquette vert" id="etat-agent">Agent actif</span></div>
 
+    <section class="vue" id="vue-accueil" hidden>
+      <div class="tableau">
+        <div class="maintenant" id="maintenant"><span class="pouls"></span><div><span class="mono">En ce moment</span><b id="maintenant-texte">…</b></div></div>
+        <div class="a-faire" id="a-faire"></div>
+        <div class="bloc"><div class="bloc-tete"><h3>Ton bilan</h3><span class="mono">depuis le début</span></div>
+          <div class="cartes-chiffres" id="cartes-chiffres"></div></div>
+        <div class="bloc"><div class="bloc-tete"><h3>Le parcours de tes offres</h3></div>
+          <div class="entonnoir" id="entonnoir"></div></div>
+        <div class="bloc"><div class="bloc-tete"><h3>Ce qu'il a fait récemment</h3></div>
+          <ol class="activite" id="activite"></ol></div>
+      </div>
+    </section>
     <section class="vue" id="vue-discussion" aria-live="polite"><div class="fil" id="fil"></div></section>
     <section class="vue" id="vue-candidatures" hidden><div class="liste" id="liste-cand"></div></section>
     <section class="vue" id="vue-test" hidden><div class="carte-test" id="carte-test"></div></section>

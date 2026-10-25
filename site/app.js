@@ -173,7 +173,7 @@ function initApp() {
   $("#adresse-agent").textContent = utilisateur.adresse_agent || "";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
-  montrer("discussion");
+  montrer("accueil");
   rafraichir();
   clearInterval(minuteur);
   minuteur = setInterval(() => { if (!document.hidden) rafraichir(); }, 2500);
@@ -182,9 +182,10 @@ function initApp() {
 function montrer(vue) {
   vueActive = vue;
   document.querySelectorAll(".onglet").forEach((o) => o.setAttribute("aria-selected", String(o.dataset.vue === vue)));
-  for (const v of ["discussion", "candidatures", "test", "reglages"]) $("#vue-" + v).hidden = v !== vue;
+  for (const v of ["accueil", "discussion", "candidatures", "test", "reglages"]) $("#vue-" + v).hidden = v !== vue;
   $("#saisie").hidden = vue !== "discussion";
-  $("#titre-vue").textContent = { discussion: "Discussion", candidatures: "Candidatures", test: "Phase de test", reglages: "Réglages" }[vue];
+  $("#titre-vue").textContent = { accueil: "Accueil", discussion: "Discussion", candidatures: "Candidatures", test: "Phase de test", reglages: "Réglages" }[vue];
+  if (vue === "accueil") afficherTableau();
   if (vue === "discussion") { nonLus = 0; majPastille(); defiler(); }
   if (vue === "candidatures") afficherCandidatures();
   if (vue === "test") afficherTest();
@@ -210,6 +211,7 @@ async function rafraichir() {
   document.querySelectorAll(".ecrit").forEach((e) => e.remove());
   if (c.occupe) { const e = document.createElement("div"); e.className = "ecrit"; e.append(document.createElement("span"), document.createElement("span"), document.createElement("span")); $("#fil").append(e); }
   if (nouveaux.length) defiler();
+  if (vueActive === "accueil" && Date.now() - (window._dernierTableau || 0) > 15000) { window._dernierTableau = Date.now(); afficherTableau(); }
 }
 
 function heure(le) { return le ? le.slice(11, 16) : ""; }
@@ -295,6 +297,75 @@ $("#fichier-cv").onchange = async (ev) => {
   toast("Envoi de ton CV…");
   try { await appel("/api/cv", { methode: "POST", fichier: f }); setTimeout(rafraichir, 600); } catch (e) { toast(e.message); }
 };
+
+// ---------- Accueil : le tableau de bord ----------
+// Tout est construit en DOM avec textContent (aucun HTML venant du serveur).
+function el(tag, cls, texte) { const e = document.createElement(tag); if (cls) e.className = cls; if (texte !== undefined) e.textContent = texte; return e; }
+const nombre = (n) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("fr-BE"));
+function depuis(le) {
+  if (!le) return "";
+  const t = new Date(le.replace(" ", "T") + "Z"), s = (Date.now() - t) / 1000;
+  if (s < 90) return "à l'instant";
+  if (s < 3600) return `il y a ${Math.round(s / 60)} min`;
+  if (s < 86400) return `il y a ${Math.round(s / 3600)} h`;
+  return t.toLocaleDateString("fr-BE", { day: "numeric", month: "short" });
+}
+function joliRdv(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString("fr-BE", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
+
+async function afficherTableau() {
+  let t, test;
+  try { [t, test] = await Promise.all([appel("/api/tableau"), appel("/api/test")]); } catch (e) { return toast(e.message); }
+  t = t || { chiffres: {}, activite: [], rdv: [] };
+  const c = t.chiffres || {};
+
+  // En ce moment
+  $("#maintenant").classList.toggle("actif", !!t.en_ce_moment);
+  $("#maintenant-texte").textContent = t.en_ce_moment ? `${t.en_ce_moment}…`
+    : t.derniere_activite ? `En pause — dernière action ${depuis(t.derniere_activite)}. Il reprend tout seul.`
+    : "Prêt. Envoie ton CV et dis-lui ce que tu cherches.";
+
+  // À toi de jouer : ce qui attend une décision
+  const faire = $("#a-faire"); faire.textContent = "";
+  const carteAction = (titre, texte, libelle, action) => {
+    const d = el("div", "action-carte"); d.append(el("span", "mono", "À toi de jouer"), el("b", "", titre), el("p", "", texte));
+    const b = el("button", "bouton petit", libelle); b.type = "button"; b.onclick = action; d.append(b); faire.append(d);
+  };
+  for (const r of (t.rdv || []).filter((x) => x.statut === "propose"))
+    carteAction(`Entretien proposé · ${r.entreprise || "un employeur"}`, `${joliRdv(r.debut)}${r.lieu ? " · " + r.lieu : ""}. Tu es d'accord ?`,
+      "Répondre", () => montrer("discussion"));
+  if (test && test.statut === "a_noter") carteAction(`Test n°${test.tour} à noter`, "3 candidatures t'attendent sur ton email. Donne une note sur 20.", "Noter", () => montrer("test"));
+  if (test && test.statut === "attente_accord") carteAction("Test réussi 🎉", "Ton agent attend ton accord pour écrire aux recruteurs.", "Donner mon accord", () => montrer("test"));
+
+  // Chiffres clés
+  const cartes = $("#cartes-chiffres"); cartes.textContent = "";
+  [["analysees", "offres analysées"], ["ecartees", "écartées (tes règles)"], ["en_preparation", "en préparation"],
+   ["tests", "candidatures de test"], ["envoyees", "envoyées aux recruteurs"], ["reponses", "réponses reçues"],
+   ["entretiens", "entretiens"], ["taux_reponse", "taux de réponse"]].forEach(([k, lib]) => {
+    const d = el("div", "chiffre-carte" + (k === "envoyees" || k === "entretiens" ? " fort" : ""));
+    d.append(el("strong", "", k === "taux_reponse" ? (c[k] === null || c[k] === undefined ? "—" : `${c[k]} %`) : nombre(c[k] || 0)), el("span", "", lib));
+    cartes.append(d);
+  });
+
+  // Entonnoir : de l'offre lue à l'entretien
+  const ent = $("#entonnoir"); ent.textContent = "";
+  const max = Math.max(1, c.analysees || 0);
+  [["Lues", c.analysees], ["Retenues", (c.analysees || 0) - (c.ecartees || 0)], ["Envoyées", c.envoyees], ["Réponses", c.reponses], ["Entretiens", c.entretiens]]
+    .forEach(([lib, n]) => {
+      const ligne = el("div", "etage"); const barre = el("div", "barre-e"); const plein = el("span");
+      plein.style.setProperty("--l", n ? `${Math.max(2, Math.round(100 * n / max))}%` : "0");
+      barre.append(plein); ligne.append(el("span", "lib", lib), barre, el("b", "", nombre(n || 0))); ent.append(ligne);
+    });
+
+  // Fil d'activité
+  const fil = $("#activite"); fil.textContent = "";
+  if (!(t.activite || []).length) fil.append(el("li", "vide-ligne", "Rien encore : il commence dès qu'il a ton CV."));
+  (t.activite || []).forEach((a) => {
+    const li = el("li"); li.append(el("span", "role", a.role), el("span", "quoi", a.quoi), el("time", "", depuis(a.le))); fil.append(li);
+  });
+}
 
 // ---------- Candidatures ----------
 async function afficherCandidatures() {
