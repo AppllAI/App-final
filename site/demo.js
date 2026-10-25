@@ -103,16 +103,24 @@ window.DEMO = (() => {
       if (chemin === "/api/sante") return { ok: true, google: true, google_client_id: "demo" };
       if (chemin === "/api/agents") return AGENTS_SECOURS;
       if (chemin === "/api/auth/google") {
-        etat.utilisateur = { email: "camille.demo@gmail.com", nom: "Camille", agent: null, notif_email: true, fournisseur: "google",
+        etat.utilisateur = { email: "camille.demo@gmail.com", nom: "Camille", agent: null, notif_email: true, audace: "equilibre", fournisseur: "google",
           adresse_test: "camille.demo@gmail.com", gmail_ok: true, adresse_agent: null };
         return { jeton: "demo", utilisateur: etat.utilisateur };
       }
-      if (!etat.utilisateur) etat.utilisateur = { email: "camille.demo@gmail.com", agent: null, notif_email: true,
+      if (!etat.utilisateur) etat.utilisateur = { email: "camille.demo@gmail.com", agent: null, notif_email: true, audace: "equilibre",
         adresse_test: "camille.demo@gmail.com", gmail_ok: true };
       if (chemin === "/api/moi" && methode === "GET") return { ...etat.utilisateur, agent_en_marche: true };
       if (chemin === "/api/moi" && methode === "PATCH") { etat.utilisateur.notif_email = corps.notif_email; return { ok: true }; }
       if (chemin === "/api/moi" && methode === "DELETE") { etat.utilisateur = null; return { ok: true }; }
       if (chemin === "/api/auth/deconnexion") return { ok: true };
+      if (chemin === "/api/audace") {
+        etat.utilisateur.audace = corps.mode;
+        const t = { strict: "Mode *strict* : je ne postule que là où ton profil coche tout (langues, expérience, diplômes).",
+          equilibre: "Mode *équilibré* : une exigence claire de l'annonce bloque, un simple « atout » non.",
+          audacieux: "Mode *audacieux* : j'ose même quand l'annonce exige une langue ou une expérience que tu n'as pas encore, toujours dans ton domaine, ta zone et tes horaires. Tes lettres restent honnêtes." };
+        dit(t[corps.mode]);
+        return { ok: true, audace: corps.mode };
+      }
       if (chemin === "/api/agent") {
         etat.utilisateur.agent = corps.agent;
         const e = etat.utilisateur.email;

@@ -49,7 +49,7 @@ function toast(texte) {
 }
 
 function ecran(nom) {
-  for (const id of ["ecran-connexion", "ecran-autorisation", "ecran-agents", "ecran-app"]) $("#" + id).hidden = id !== nom;
+  for (const id of ["ecran-connexion", "ecran-autorisation", "ecran-agents", "ecran-audace", "ecran-app"]) $("#" + id).hidden = id !== nom;
 }
 
 // ---------- Texte enrichi sûr : *gras* et liens, construits en DOM ----------
@@ -153,11 +153,73 @@ async function initAgents() {
       if (utilisateur.agent && utilisateur.agent !== a.id &&
           !confirm("Changer d'agent efface ton espace actuel (CV, lettres, mémoire). Continuer ?")) return;
       carte.disabled = true;
-      try { await appel("/api/agent", { methode: "POST", corps: { agent: a.id } }); utilisateur.agent = a.id; initApp(); }
+      try { await appel("/api/agent", { methode: "POST", corps: { agent: a.id } }); utilisateur.agent = a.id; initAudace(); }
       catch (e) { toast(e.message); carte.disabled = false; }
     };
     zone.append(carte);
   }
+}
+
+// ---------- Style de candidature : strict, équilibré ou audacieux ----------
+const ICONE = (d) => `<svg class="icone-audace" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const AUDACES = [
+  { id: "strict", nom: "Strict", accroche: "Je coche toutes les cases",
+    texte: "Je postule seulement quand ton profil colle à 100 % : langues, expérience, diplômes. Moins d'envois, zéro hors-sujet.",
+    icone: '<path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/>' },
+  { id: "equilibre", nom: "Équilibré", accroche: "Le bon dosage", reco: true,
+    texte: "Une exigence claire de l'annonce te bloque, un simple « atout » non. Le meilleur rapport entre envois et réponses.",
+    icone: '<path d="M12 4v16M5 20h14M6 8h12"/><path d="m6 8-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z"/>' },
+  { id: "audacieux", nom: "Audacieux", accroche: "J'ose",
+    texte: "Je postule même si l'annonce exige une langue ou une expérience que tu n'as pas encore.",
+    icone: '<path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2"/><path d="M9 15 6.5 12.5C8 8 11.5 4 20 4c0 8.5-4 12-8.5 13.5z"/><circle cx="15" cy="9" r="1.5"/>' },
+];
+
+// Les 3 cartes ; « audacieux » demande une confirmation, avec ce que ça change concrètement
+function choixAudace(zone, actuel, surChoix) {
+  zone.textContent = "";
+  const grille = el("div", "audaces");
+  const details = el("div", "confirmation-audace"); details.hidden = true;
+  const choisir = (id) => {
+    grille.querySelectorAll(".carte-audace").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.mode === id)));
+    surChoix(id);
+  };
+  for (const a of AUDACES) {
+    const c = el("button", "carte-audace"); c.type = "button"; c.dataset.mode = a.id; c.setAttribute("aria-pressed", String(a.id === actuel));
+    const tete = el("span", "tete-audace"); tete.innerHTML = ICONE(a.icone);            // icône statique, aucun texte venant du serveur
+    tete.append(el("b", "", a.nom));
+    if (a.reco) tete.append(el("span", "etiquette", "Recommandé"));
+    c.append(tete, el("span", "accroche", a.accroche), el("span", "texte-audace", a.texte));
+    c.onclick = () => {
+      if (a.id !== "audacieux") { details.hidden = true; return choisir(a.id); }
+      details.hidden = false; details.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+    };
+    grille.append(c);
+  }
+  details.append(el("b", "", "Le mode audacieux, concrètement"));
+  const ul = el("ul");
+  ["Une offre exige le néerlandais et ce n'est pas sur ton CV ? Je postule quand même.",
+   "Toujours dans ton domaine, ta zone et tes horaires : jamais un poste hors sujet.",
+   "Tes lettres restent 100 % honnêtes : je n'écris jamais que tu parles une langue que tu ne parles pas.",
+   "Plus d'envois, plus de chances… et un peu plus de refus. C'est le jeu."].forEach((t) => ul.append(el("li", "", t)));
+  const boutons = el("div", "boutons-audace");
+  const oui = el("button", "bouton vert", "Je confirme, j'ose"); oui.type = "button";
+  const non = el("button", "bouton clair", "Finalement non"); non.type = "button";
+  oui.onclick = () => { details.hidden = true; choisir("audacieux"); };
+  non.onclick = () => { details.hidden = true; };
+  boutons.append(oui, non); details.append(ul, boutons);
+  zone.append(grille, details);
+}
+
+async function enregistrerAudace(mode) {
+  const r = await appel("/api/audace", { methode: "POST", corps: { mode } });
+  utilisateur.audace = r.audace || mode;
+}
+
+function initAudace() {
+  ecran("ecran-audace");
+  choixAudace($("#choix-audace"), null, async (mode) => {
+    try { await enregistrerAudace(mode); initApp(); } catch (e) { toast(e.message); }
+  });
 }
 
 // ---------- Application ----------
@@ -174,6 +236,10 @@ function initApp() {
   $("#adresse-agent").textContent = utilisateur.adresse_agent || "";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
+  choixAudace($("#reglage-audace"), utilisateur.audace || "equilibre", async (mode) => {
+    try { await enregistrerAudace(mode); toast("Style « " + AUDACES.find((a) => a.id === mode).nom + " » enregistré."); }
+    catch (e) { toast(e.message); }
+  });
   const depart = location.hash.slice(1);                  // lien de l'email « à toi de noter » : …/app.html#test
   montrer(VUES.includes(depart) ? depart : "accueil");
   rafraichir();
