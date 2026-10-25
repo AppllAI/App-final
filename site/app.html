@@ -26,7 +26,7 @@
     <a class="logo" href="./"><img class="logo-marque" src="icones/logo.svg" alt="" width="28" height="28"><span class="mot">appl<span class="accent">ai</span></span></a>
     <h1>Ton espace</h1>
     <p class="sous">Un clic avec ton compte Google. Tes candidatures partiront de <b>ton</b> adresse Gmail.</p>
-    <button class="bouton bouton-google" id="bouton-google" type="button"><span class="g" aria-hidden="true">G</span>Continuer avec Google</button>
+    <button class="bouton bouton-google" id="bouton-google" type="button"><img class="g" src="icones/google.svg" alt="" width="20" height="20">Continuer avec Google</button>
     <div class="apercu-google" aria-hidden="true">
       <span class="mono">Sur l'écran de Google, laisse cochée :</span>
       <div class="g-ligne"><span class="g-case"></span><b>Envoyer des e-mails en votre nom</b></div>
@@ -48,7 +48,7 @@
       <li>Les mails envoyés apparaissent dans tes « Envoyés ».</li>
       <li>Rien ne part chez un recruteur avant la phase de test et ton accord.</li>
     </ul>
-    <button class="bouton bouton-google" id="bouton-autoriser" type="button"><span class="g" aria-hidden="true">G</span>Autoriser l'envoi depuis mon Gmail</button>
+    <button class="bouton bouton-google" id="bouton-autoriser" type="button"><img class="g" src="icones/google.svg" alt="" width="20" height="20">Autoriser l'envoi depuis mon Gmail</button>
     <div class="apercu-google" aria-hidden="true">
       <span class="mono">Coche bien la case :</span>
       <div class="g-ligne"><span class="g-case"></span><b>Envoyer des e-mails en votre nom</b></div>
@@ -72,11 +72,11 @@
 <div class="coque" id="ecran-app" hidden>
   <aside class="cote" role="tablist" aria-label="Sections">
     <a class="logo" href="./"><img class="logo-marque" src="icones/logo.svg" alt="" width="28" height="28"><span class="mot">appl<span class="accent">ai</span></span></a>
-    <button class="onglet" role="tab" data-vue="accueil" aria-selected="true"><span class="icone">🏠</span>Accueil</button>
-    <button class="onglet" role="tab" data-vue="discussion" aria-selected="false"><span class="icone">💬</span>Discussion<span class="pastille" id="pastille" hidden>0</span></button>
-    <button class="onglet" role="tab" data-vue="candidatures" aria-selected="false"><span class="icone">📄</span>Candidatures</button>
-    <button class="onglet" role="tab" data-vue="test" aria-selected="false"><span class="icone">🧪</span>Phase de test</button>
-    <button class="onglet" role="tab" data-vue="reglages" aria-selected="false"><span class="icone">⚙️</span>Réglages</button>
+    <button class="onglet" role="tab" data-vue="accueil" aria-selected="true"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>Accueil</button>
+    <button class="onglet" role="tab" data-vue="discussion" aria-selected="false"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Discussion<span class="pastille" id="pastille" hidden>0</span></button>
+    <button class="onglet" role="tab" data-vue="candidatures" aria-selected="false"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6zM9 11h6M9 15h6"/></svg>Candidatures</button>
+    <button class="onglet" role="tab" data-vue="test" aria-selected="false"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7.5 15h9"/></svg>Phase de test</button>
+    <button class="onglet" role="tab" data-vue="reglages" aria-selected="false"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Réglages</button>
     <div class="bas" id="qui"></div>
   </aside>
   <main class="principal">
@@ -118,10 +118,10 @@
 
     <form class="saisie" id="saisie">
       <input type="file" id="fichier-cv" accept="application/pdf" class="cache">
-      <button class="rond" type="button" id="joindre" title="Envoyer mon CV (PDF)" aria-label="Envoyer mon CV en PDF">📎</button>
+      <button class="rond" type="button" id="joindre" title="Envoyer mon CV (PDF)" aria-label="Envoyer mon CV en PDF"><svg class="icone-b" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.5 19a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.7 1.7 0 0 1-2.4-2.4L15 7"/></svg></button>
       <label for="message" class="cache">Ton message</label>
       <textarea id="message" rows="1" maxlength="4000" placeholder="Écris à ton agent… (« cherche maintenant », « note 14 : trop long »)"></textarea>
-      <button class="rond plein" type="submit" aria-label="Envoyer">➤</button>
+      <button class="rond plein" type="submit" aria-label="Envoyer"><svg class="icone-b" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
     </form>
   </main>
 </div>

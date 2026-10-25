@@ -2,46 +2,84 @@
 // Actif seulement quand CONFIG.API est vide. Rien n'est envoyé nulle part.
 "use strict";
 window.DEMO = (() => {
-  const etat = { moi: [], agent: [], idMoi: 0, idAgent: 0, utilisateur: null,
-                 test: { tour: 1, statut: "en_cours", ids: [], notes: [] }, cand: [] };
+  const etat = { moi: [], agent: [], idMoi: 0, idAgent: 0, utilisateur: null, cand: [],
+                 test: { tour: 1, statut: "a_lancer", ids: [], notes: {}, historique: [], exigences: [] } };
   const maintenant = () => new Date().toISOString().replace("T", " ").slice(0, 19);
   const dit = (texte, extra = {}) => etat.agent.push({ id: ++etat.idAgent, genre: "texte", texte, boutons: null,
     fichier: false, nom_fichier: null, legende: null, le: maintenant(), ...extra });
   const plusTard = (ms, f) => setTimeout(f, ms);
+  const bouton = (libelle, commande) => ({ libelle, commande });
+  const OFFRES = [
+    { id: 12, titre: "Stagiaire avocat – droit immobilier", entreprise: "Cabinet Lumen", ville: "Bruxelles", note_lettre: 9 },
+    { id: 14, titre: "Juriste contentieux", entreprise: "Delta & Associés", ville: "Namur", note_lettre: 8 },
+    { id: 15, titre: "Candidature spontanée – stagiaire", entreprise: "Horizon Law", ville: "Bruxelles", note_lettre: 8.5 },
+  ];
 
-  function envoyerTest() {
-    etat.cand = [
-      { id: 12, titre: "Stagiaire avocat – droit immobilier", entreprise: "Cabinet Lumen", ville: "Bruxelles", statut: "repetee", score: 9, note_lettre: 9 },
-      { id: 14, titre: "Juriste contentieux", entreprise: "Delta & Associés", ville: "Namur", statut: "repetee", score: 8, note_lettre: 8 },
-      { id: 15, titre: "Candidature spontanée – stagiaire", entreprise: "Horizon Law", ville: "Bruxelles", statut: "repetee", score: 8, note_lettre: 9 },
-    ];
-    etat.test.ids = [12, 14, 15];
-    etat.test.statut = "a_noter";
-    dit("📄 Lettre de motivation (PDF) — Cabinet Lumen", { genre: "fichier", fichier: true, nom_fichier: "Lettre_de_motivation_demo.pdf", legende: "Lettre – Cabinet Lumen" });
-    dit(`🧪 Test n°${etat.test.tour} terminé : tu as reçu 3 candidatures sur ${etat.utilisateur.email}, exactement comme un recruteur les recevrait (rien n'est parti chez eux).\nLis-les, puis donne-moi une *note sur 20* et dis-moi ce que tu as aimé et moins aimé.`, { genre: "notation" });
+  function proposerTest() {
+    dit(`J'ai tout ce qu'il me faut 👍 Veux-tu que je lance le test maintenant ?\nJe prépare 3 candidatures et je les envoie sur *ton* adresse (${etat.utilisateur.email}), pas chez les recruteurs : c'est juste pour que tu les juges et que tu les notes.`,
+      { boutons: [[bouton("▶️ Lancer le test", "lancer le test"), bouton("Plus tard", "plus tard")]] });
+  }
+
+  function lancerTest() {
+    if (etat.test.statut !== "a_lancer" && etat.test.statut !== "en_cours") return;
+    etat.test.statut = "en_cours"; etat.test.ids = []; etat.test.notes = {};
+    dit(`C'est parti 🧪 Je cherche les offres et j'écris tes candidatures. Tu les recevras sur ${etat.utilisateur.email} au fur et à mesure.`);
+    OFFRES.forEach((o, k) => plusTard(2500 * (k + 1), () => {
+      etat.test.ids.push(o.id);
+      etat.cand = OFFRES.slice(0, k + 1).map((x) => ({ ...x, statut: "repetee", score: 9 }));
+      if (k === 0) dit("📄 Lettre de motivation (PDF) — Cabinet Lumen", { genre: "fichier", fichier: true, nom_fichier: "Lettre_de_motivation_demo.pdf", legende: "Lettre – Cabinet Lumen" });
+      if (k === OFFRES.length - 1) {
+        etat.test.statut = "a_noter";
+        dit(`🧪 Test n°${etat.test.tour} prêt : 3 candidatures sur ${etat.utilisateur.email}, exactement comme un recruteur les recevrait.\nNote *chacune* sur 20 dans l'onglet *Phase de test*.`, { genre: "notation" });
+      }
+    }));
+  }
+
+  function moyenne() {
+    const n = etat.test.ids.map((i) => etat.test.notes[i]).filter((x) => x !== undefined);
+    return n.length ? Math.round((n.reduce((a, b) => a + b, 0) / n.length) * 10) / 10 : null;
+  }
+
+  function noter(id, note) {
+    etat.test.notes[id] = note;
+    if (!etat.test.ids.every((i) => etat.test.notes[i] !== undefined) || etat.test.ids.length < 3) return;
+    const m = moyenne();
+    if (m >= 15) {
+      etat.test.statut = "attente_accord";
+      return dit(`🎉 Moyenne de ${m}/20 : la qualité est au rendez-vous.\nOn quitte la phase de test et je commence à postuler pour de vrai, depuis ton Gmail ?`,
+        { boutons: [[bouton("✅ Oui, postuler pour de vrai", "autoriser envoi"), bouton("🔁 Encore un test", "refaire un test")]] });
+    }
+    etat.test.statut = "retour";
+    dit(`Oups, la moyenne est de ${m}/20 : en dessous de 15/20.\nAvant de continuer, dis-moi ce qui n'a pas été : le style, le ton, la longueur, ce qui manque… Je le retiens pour toujours.`, { genre: "retour" });
+  }
+
+  function retour(texte) {
+    etat.test.exigences.push({ le: maintenant().slice(0, 10), texte });
+    etat.test.historique.push({ tour: etat.test.tour, moyenne: moyenne(), retour: texte });
+    etat.test.tour += 1; etat.test.statut = "a_lancer";
+    dit(`C'est noté, et gardé pour toutes tes prochaines candidatures ✍️\n« ${texte} »\nJe réécris les candidatures : tu reçois le test n°${etat.test.tour} dans quelques instants.`);
+    etat.test.statut = "en_cours"; etat.test.ids = []; etat.test.notes = {}; etat.cand = [];
+    plusTard(500, () => { etat.test.statut = "a_lancer"; lancerTest(); });
+  }
+
+  function vueTest() {
+    const c = etat.test.ids.map((i) => { const o = OFFRES.find((x) => x.id === i);
+      return { id: o.id, titre: o.titre, entreprise: o.entreprise, ville: o.ville, note_ia: Math.round(o.note_lettre * 2), note: etat.test.notes[i] ?? null }; });
+    return { tour: etat.test.tour, statut: etat.test.statut, candidatures: c, moyenne: moyenne(), taille: 3,
+             historique: etat.test.historique, exigences: etat.test.exigences };
   }
 
   function repondre(texte) {
     const t = texte.toLowerCase();
-    const note = texte.match(/^note\s*:?\s*(\d{1,2})\s*(?:\/\s*20)?\s*[:,.-]?\s*([\s\S]*)$/i);
-    if (note) {
-      const n = Math.min(20, +note[1]);
-      etat.test.notes.push({ tour: etat.test.tour, note: n, commentaire: note[2] });
-      if (n >= 15 && etat.test.tour >= 2) {
-        etat.test.statut = "attente_accord";
-        return dit(`🎉 ${n}/20 au test n°${etat.test.tour} : la qualité est au rendez-vous.\nJe peux maintenant envoyer tes candidatures *directement aux recruteurs*. Tu me donnes ton accord ?`,
-          { boutons: [[{ libelle: "✅ Oui, envoie aux recruteurs", commande: "autoriser envoi" }, { libelle: "🔁 Encore un test", commande: "refaire un test" }]] });
-      }
-      etat.test.tour += 1; etat.test.statut = "en_cours"; etat.test.ids = [];
-      dit(`Merci pour ta note (${n}/20). Je réécris ces candidatures en tenant compte de tes remarques : tu reçois le test n°${etat.test.tour} par email dans quelques minutes.`);
-      return plusTard(4000, envoyerTest);
-    }
-    if (t.includes("autoriser")) { etat.test.statut = "reussi"; return dit("C'est parti 🚀 Phase de test réussie : à partir de maintenant, j'écris directement aux recruteurs."); }
-    if (t.includes("refaire")) { etat.test.tour += 1; etat.test.statut = "en_cours"; dit(`OK, je prépare le test n°${etat.test.tour} sur de nouvelles offres.`); return plusTard(4000, envoyerTest); }
+    if (t.startsWith("lancer le test")) return lancerTest();
+    if (t === "plus tard") return dit("Pas de souci. Quand tu veux, touche « Lancer le test ».", { boutons: [[bouton("▶️ Lancer le test", "lancer le test")]] });
+    if (t.includes("autoriser")) { etat.test.statut = "reussi"; return dit("C'est parti 🚀 Phase de test réussie : je postule pour de vrai, depuis ton Gmail."); }
+    if (t.includes("refaire")) { etat.test.tour += 1; etat.test.statut = "a_lancer"; return lancerTest(); }
+    if (t === "test") return dit("Ouvre l'onglet *Phase de test* : tu y notes chaque candidature.");
     if (t.includes("souviens")) return dit("Oui : le 21/10 tu m'as parlé du cabinet Verhaegen à Namur, tu préfères les cabinets de taille moyenne. Je les privilégie.");
-    if (/immobilier|bruxelles|stage|juriste|cherche/.test(t)) {
-      dit("Noté 👍 Je cherche dès maintenant. Dès que j'ai 3 candidatures prêtes, je te les envoie par email pour le test n°1.");
-      return plusTard(5000, envoyerTest);
+    if (/immobilier|bruxelles|stage|juriste|cherche|job|vente/.test(t)) {
+      dit("Noté 👍 Récap : stage ou juriste en droit immobilier, à Bruxelles, sans pénal.");
+      return plusTard(1200, proposerTest);
     }
     dit("Compris ! (mode démo : en vrai, ton agent agit pour de bon.)");
   }
@@ -64,7 +102,14 @@ window.DEMO = (() => {
       if (chemin === "/api/auth/deconnexion") return { ok: true };
       if (chemin === "/api/agent") {
         etat.utilisateur.agent = corps.agent;
-        dit("⚖️ *Ton agent est prêt.*\n\n*Pour démarrer :*\n1️⃣ Envoie ton CV en PDF (📎)\n2️⃣ Dis-moi ce que tu cherches (poste, villes, ce que tu refuses)\n\n🧪 *Phase de test d'abord* : je t'envoie 3 candidatures sur TON email. Tu les notes sur 20, je corrige, et après 2 tests ≥ 15/20 je te demande ton accord avant d'écrire au moindre recruteur.");
+        const e = etat.utilisateur.email;
+        dit("⚖️ *Agent Avocat*\nJe cherche les offres juridiques en continu, j'écris une lettre sur mesure pour chacune et je postule pour toi. Je ne te dérange que pour décider.\n\n"
+          + "*Comment ça marche, étape par étape :*\n1️⃣ *Ton CV* : envoie-le en PDF avec le trombone 📎.\n"
+          + "2️⃣ *Ce que tu cherches* : dis-moi le poste, les matières, les villes, ce que tu refuses et ta date de début.\n"
+          + `3️⃣ *Le test* : quand j'ai tout, je te propose de le lancer. Je prépare 3 candidatures et je les envoie sur *ton* adresse (${e}), jamais chez un cabinet.\n`
+          + "4️⃣ *Tes notes* : tu notes chacune sur 20 dans l'onglet *Phase de test*. Moyenne d'au moins 15/20 : je te propose de postuler pour de vrai. Sinon, tu me dis ce qui ne va pas, je le retiens pour toujours et je refais un test.\n"
+          + "5️⃣ *Pour de vrai* : je postule depuis ton Gmail, je relance, je trie les réponses et je te préviens pour les entretiens.\n\n"
+          + "*Ensuite, parle-moi normalement*, par exemple :\n• « plus de droit fiscal », « ajoute Liège » → je change ta recherche\n• « trop long », « moins formel » → je le retiens pour toutes tes lettres");
         return { ok: true };
       }
       if (chemin.startsWith("/api/conversation")) {
@@ -84,9 +129,12 @@ window.DEMO = (() => {
       }
       if (chemin.startsWith("/api/fichiers/")) return new Blob(["%PDF-1.4 démo"], { type: "application/pdf" });
       if (chemin === "/api/candidatures") return etat.cand;
-      if (chemin === "/api/test") return etat.test;
+      if (chemin === "/api/test") return vueTest();
+      if (chemin === "/api/test/lancer") { lancerTest(); return { ok: true }; }
+      if (chemin === "/api/test/noter") { noter(corps.offre_id, corps.note); return { ok: true }; }
+      if (chemin === "/api/test/retour") { retour(corps.texte); return { ok: true }; }
       if (chemin === "/api/tableau") {
-        const tests = etat.cand.length, envoyees = etat.test.statut === "reussi" ? 4 : 0;
+        const tests = etat.test.ids.length, envoyees = etat.test.statut === "reussi" ? 4 : 0;
         const activite = etat.cand.length ? [
           { role: "Envoi", quoi: `Test n°${etat.test.tour} → ${etat.utilisateur.email}`, le: maintenant() },
           { role: "Rédaction", quoi: "Lettre écrite et vérifiée (9/10) · Cabinet Lumen", le: maintenant() },
@@ -95,7 +143,7 @@ window.DEMO = (() => {
         return { chiffres: { analysees: tests ? 37 : 0, ecartees: tests ? 29 : 0, en_preparation: tests ? 5 : 0, tests,
                              envoyees, reponses: envoyees ? 1 : 0, entretiens: envoyees ? 1 : 0, recherches: tests ? 2 : 0,
                              taux_reponse: envoyees ? 25 : null },
-                 activite, rdv: [], en_ce_moment: null, agent_actif: true, derniere_activite: activite.length ? maintenant() : null };
+                 activite, rdv: [], en_ce_moment: null, agent_actif: true, en_pause: false, derniere_activite: activite.length ? maintenant() : null };
       }
       throw new Error("Route inconnue en démo : " + chemin);
     },
