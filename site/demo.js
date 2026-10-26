@@ -130,6 +130,17 @@ window.DEMO = (() => {
       await new Promise((r) => setTimeout(r, 250));
       if (chemin === "/api/sante") return { ok: true, google: true, google_client_id: "demo" };
       if (chemin === "/api/agents") return AGENTS_SECOURS;
+      // Remplir en 1 clic (démo)
+      if (chemin === "/api/formulaire") {
+        if (methode === "PATCH") { etat.fiche = corps; return { ok: true }; }
+        return { fiche: etat.fiche || { prenom: "Camille", nom: "Dupont", email: "camille.demo@gmail.com", telephone: "+32 470 00 00 00",
+          adresse: "Rue de la Loi 16", code_postal: "1000", ville: "Bruxelles", pays: "Belgique", linkedin: "" }, corrigee: !!etat.fiche };
+      }
+      if (chemin === "/api/extension/cle") {
+        if (methode === "POST") { etat.cleExt = true; return { cle: "aplx_demo_cle_fictive_0123456789" }; }
+        if (methode === "DELETE") { etat.cleExt = false; return { ok: true }; }
+        return { active: !!etat.cleExt };
+      }
       // Suivi administrateur (démo : app.html?admin) — un testeur fictif
       if (chemin.startsWith("/api/admin/")) return demoAdmin(chemin);
       if (chemin === "/api/auth/google") {
