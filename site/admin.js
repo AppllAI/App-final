@@ -118,8 +118,9 @@ function bloc(parent, titre) { const b = el("section", "bloc admin-bloc"); if (t
 function texteBrut(parent, t, vide) { parent.append(t ? el("pre", "admin-pre", t) : el("p", "sous", vide)); }
 function ligneAdmin(parent, cle, valeur) { const l = el("div", "admin-ligne"); l.append(el("span", "sous", cle), el("span", "", valeur == null || valeur === "" ? "—" : String(valeur))); parent.append(l); }
 
-function secResume(z, d) {
+function secResume(z, d, id) {
   const u = d.compte;
+  actionsAdmin(z, d, id);
   const b = bloc(z, "Où il en est");
   ligneAdmin(b, "Nom", u.nom); ligneAdmin(b, "Agent", u.agent ? "Agent " + u.agent : "pas choisi");
   ligneAdmin(b, "Inscrit", ilYa(u.cree_le)); ligneAdmin(b, "Vu dans l'app", ilYa(u.vu_le));
@@ -134,6 +135,42 @@ function secResume(z, d) {
   }
   const j = bloc(z, "Dernières actions de l'agent");
   journal(j, d.journal.slice(0, 15));
+}
+
+// Actions de l'administrateur sur cet espace (le serveur les écrit dans la base de son agent)
+function actionsAdmin(z, d, id) {
+  const b = bloc(z, "Actions");
+  const base = `/api/admin/utilisateurs/${encodeURIComponent(id)}`;
+  const rangee = el("div", "admin-actions");
+  const bouton = (texte, f) => { const x = el("button", "bouton clair petit", texte); x.type = "button"; x.onclick = () => f(x); rangee.append(x); return x; };
+  bouton("Remettre son budget du jour à zéro", async (x) => {
+    if (!confirm("Son budget d'aujourd'hui redevient entier (1 € + 0,35 € pour les lettres). Continuer ?")) return;
+    x.disabled = true;
+    try { const r = await appel(`${base}/budget`, { methode: "POST" }); toast(`Budget remis à zéro (${euros(r.remis)} offerts aujourd'hui).`); }
+    catch (e) { toast(e.message); }
+    x.disabled = false;
+  });
+  bouton("Relire son CV actuel", async (x) => {
+    x.disabled = true;
+    try { await appel(`${base}/relire-cv`, { methode: "POST" }); toast("Son agent relit son CV (il lui dira ce qui a changé)."); }
+    catch (e) { toast(e.message); }
+    x.disabled = false;
+  });
+  b.append(rangee);
+  const f = el("form", "admin-adresse");
+  const champ = el("input"); champ.type = "email"; champ.placeholder = "adresse pour ses copies et messages";
+  champ.value = d.copie_a || ""; champ.setAttribute("aria-label", "Adresse de copie");
+  const ok = el("button", "bouton petit", "Enregistrer"); ok.type = "submit";
+  f.append(champ, ok);
+  f.onsubmit = async (ev) => {
+    ev.preventDefault(); ok.disabled = true;
+    try { await appel(`${base}/adresse`, { methode: "POST", corps: { adresse: champ.value.trim() } });
+      toast(champ.value.trim() ? "Copies et messages iront aussi à cette adresse." : "Copies arrêtées."); }
+    catch (e) { toast(e.message); }
+    ok.disabled = false;
+  };
+  b.append(el("p", "petit-texte", "Adresse où elle reçoit une copie de chaque candidature envoyée et les messages de son agent (vide = son Gmail de connexion)."), f);
+  if (d.budget_offert) b.append(el("p", "petit-texte", `Budget remis à zéro aujourd'hui (${euros(d.budget_offert)} offerts).`));
 }
 
 function secCv(z, d, id) {

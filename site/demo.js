@@ -104,6 +104,8 @@ window.DEMO = (() => {
     if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 },
       modele_local: { etat: "en marche", machine_dispo_mo: 6645, machine_total_mo: 7941, tri_7j: { emails: 0, duree_moyenne_s: null } } };
     if (chemin === "/api/admin/utilisateurs") return [compte];
+    if (/\/budget$/.test(chemin)) return { ok: true, remis: 0.95 };
+    if (/\/adresse$|\/relire-cv$/.test(chemin)) return { ok: true };
     if (/\/cv$|\/fichiers\//.test(chemin)) return new Blob(["%PDF-1.4 démo"], { type: "application/pdf" });
     if (/\/offres\/\d+$/.test(chemin)) return { id: 16, titre: "Vendeur étudiant (démo)", entreprise: "Boutique Lumen", ville: "Bruxelles",
       statut: "repetee", score: 7, raison: "Vente le samedi, comme demandé.", email_contact: "jobs@boutique-lumen.be", url: "",
