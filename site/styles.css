@@ -639,6 +639,7 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .bulle.admin-bouton { opacity: .7; }
 .admin-souvenir { margin: 0; padding: 8px 12px; border-radius: var(--r-s); background: rgba(255, 255, 255, .04); font-size: .88rem; }
 .lien { color: var(--accent); }
+.admin-cle { margin-top: 18px; }
 .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-adresse { display: flex; gap: 8px; flex-wrap: wrap; }
 .admin-adresse input { flex: 1; min-width: 220px; min-height: 40px; padding: 8px 12px; }
