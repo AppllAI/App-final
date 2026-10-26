@@ -640,3 +640,4 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .admin-souvenir { margin: 0; padding: 8px 12px; border-radius: var(--r-s); background: rgba(255, 255, 255, .04); font-size: .88rem; }
 .lien { color: var(--accent); }
 @media (max-width: 640px) { .admin-barre h1 { order: 3; flex-basis: 100%; font-size: 1.4rem; word-break: break-all; } .admin-barre #admin-actualiser { margin-left: auto; } }
+.admin-export { margin-bottom: 12px; }
