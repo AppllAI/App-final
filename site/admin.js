@@ -106,7 +106,9 @@ async function ouvrirUtilisateur(id) {
        reponses: secReponses, couts: secCouts })[k](corps, d, id);
   };
   for (const [k, l] of SECTIONS) { const b = el("button", "puce-onglet", l); b.type = "button"; b.dataset.k = k; b.onclick = () => montrerSection(k); onglets.append(b); }
-  zone.append(onglets, corps);
+  const exp = el("button", "bouton clair petit admin-export", "Exporter pour analyse"); exp.type = "button";
+  exp.onclick = () => exporterDossier(exp, d, id);
+  zone.append(exp, onglets, corps);
   montrerSection("resume");
 }
 
@@ -267,4 +269,24 @@ async function telechargerAdmin(chemin, nom) {
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   } catch (e) { toast(e.message); }
+}
+
+// Tout le dossier d'un testeur dans un fichier (lettres comprises), à transmettre pour analyse.
+async function exporterDossier(bouton, d, id) {
+  bouton.disabled = true; bouton.textContent = "Préparation…";
+  try {
+    const avecLettre = d.offres.filter((o) => o.a_lettre || o.envoye_le).slice(0, 80);
+    const offres = [];
+    for (const o of avecLettre) {
+      try { offres.push(await appel(`/api/admin/utilisateurs/${encodeURIComponent(id)}/offres/${o.id}`)); } catch (e) { /* offre effacée */ }
+    }
+    const dossier = { exporte_le: new Date().toISOString(), ...d, offres_detaillees: offres };
+    const blob = new Blob([JSON.stringify(dossier, null, 1)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `dossier_${(d.compte.email || id).split("@")[0]}.json`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast("Dossier exporté.");
+  } catch (e) { toast(e.message); }
+  bouton.disabled = false; bouton.textContent = "Exporter pour analyse";
 }
