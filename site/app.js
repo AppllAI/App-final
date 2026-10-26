@@ -237,6 +237,7 @@ function initApp() {
   $("#adresse-agent").textContent = utilisateur.adresse_agent || "";
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
+  initUnClic();
   choixAudace($("#reglage-audace"), utilisateur.audace || "equilibre", async (mode) => {
     try { await enregistrerAudace(mode); toast("Style « " + AUDACES.find((a) => a.id === mode).nom + " » enregistré."); }
     catch (e) { toast(e.message); }

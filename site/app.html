@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20261026e">
+  <link rel="stylesheet" href="styles.css?v=20261026f">
 </head>
 <body>
 <div class="bandeau" id="bandeau-demo" hidden>Mode démo : le serveur n'est pas encore branché, les réponses sont fictives et rien n'est envoyé. <a href="./">Retour à l'accueil</a></div>
@@ -133,6 +133,10 @@
         <div class="reglage"><b>Envoi depuis ton Gmail</b><p class="petit-texte serre">Tes candidatures partent de <b id="adresse-envoi"></b>.
           Pendant la phase de test, elles arrivent sur cette même adresse, jamais chez un recruteur.</p>
           <span class="etiquette vert" id="etat-gmail">Autorisé</span></div>
+        <div class="reglage" id="reglage-unclic"><b>✍️ Remplir les formulaires en 1 clic</b>
+          <p class="petit-texte serre">Sur les sites où tu postules toi-même (la liste de 18 h), Applai remplit le formulaire
+            pour toi : nom, email, téléphone, adresse, CV, lettre. Tu relis, tu cliques « Envoyer ».</p>
+          <div id="unclic"></div></div>
         <div class="reglage" id="reglage-adresse-agent" hidden><b>Ton adresse d'agent</b><p class="petit-texte serre">Transfère-y tes alertes emploi
           (LinkedIn, Jobat, StepStone, Indeed…) et les réponses des recruteurs : ton agent s'en occupe.</p>
           <span class="code-agent" id="adresse-agent"></span></div>
@@ -158,10 +162,11 @@
   </main>
 </div>
 
-<script src="config.js?v=20261026e"></script>
-<script src="accueil.js?v=20261026e"></script>
-<script src="demo.js?v=20261026e"></script>
-<script src="admin.js?v=20261026e"></script>
-<script src="app.js?v=20261026e"></script>
+<script src="config.js?v=20261026f"></script>
+<script src="accueil.js?v=20261026f"></script>
+<script src="demo.js?v=20261026f"></script>
+<script src="admin.js?v=20261026f"></script>
+<script src="unclic.js?v=20261026f"></script>
+<script src="app.js?v=20261026f"></script>
 </body>
 </html>
