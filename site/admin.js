@@ -85,7 +85,24 @@ async function listeAdmin() {
     grille.append(c);
   }
   zone.append(grille);
+  sitesRemplis(zone);
   accesAssistant(zone);
+}
+
+// « Remplir en 1 clic » : ce qui se remplit sur chaque site, d'après les rapports de l'extension (nombres seuls)
+async function sitesRemplis(zone) {
+  const b = el("section", "bloc admin-bloc");
+  b.append(el("h3", "", "Sites remplis par l'extension"));
+  zone.append(b);
+  let sites;
+  try { sites = (await appel("/api/compatibilite")).sites || {}; } catch (e) { b.append(el("p", "sous", "Indisponible.")); return; }
+  const noms = Object.keys(sites);
+  if (!noms.length) { b.append(el("p", "sous", "Aucun rapport pour l'instant.")); return; }
+  b.append(el("p", "sous", "⚡ 90 % ou plus rempli · ✍️ 50 à 90 % · 🙋 moins de 50 %"));
+  for (const d of noms.slice(0, 40)) {
+    const s = sites[d], total = s.remplis + s.restants, part = total ? s.remplis / total : 0;
+    ligneAdmin(b, `${part >= 0.9 ? "⚡" : part >= 0.5 ? "✍️" : "🙋"} ${d}`, `${Math.round(part * 100)} % · ${s.essais} essai(s)`);
+  }
 }
 
 // Clé support : l'administrateur la crée ici pour son assistant (Claude Code), qui suit les bêta-testeurs sans sa

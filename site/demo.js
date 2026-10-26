@@ -141,6 +141,8 @@ window.DEMO = (() => {
         if (methode === "DELETE") { etat.cleExt = false; return { ok: true }; }
         return { active: !!etat.cleExt };
       }
+      if (chemin === "/api/compatibilite") return { sites: { "boards.greenhouse.io": { essais: 3, remplis: 27, restants: 1 },
+        "jobs.lever.co": { essais: 2, remplis: 12, restants: 4 }, "carriere-exemple.be": { essais: 1, remplis: 2, restants: 6 } } };
       // Suivi administrateur (démo : app.html?admin) — un testeur fictif
       if (chemin.startsWith("/api/admin/")) return demoAdmin(chemin);
       if (chemin === "/api/auth/google") {

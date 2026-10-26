@@ -6,6 +6,11 @@
 //                   lettre: "texte" | null, cv: File | null }, { ecraser: false })
 //   → { remplis: [{champ, etiquette}], cv: bool, lettre: bool }
 //
+//   ApplaiRemplir.questions()          → les questions encore vides [{id, question, type, options}] (jamais : mot de
+//                                        passe, consentement, date de naissance, n° national, IBAN, salaire, captcha…)
+//   ApplaiRemplir.repondre({id: texte}) → écrit les réponses proposées par son agent (surlignées « à relire »)
+//   ApplaiRemplir.suivre(rappel)        → formulaire en plusieurs étapes : rappel() à chaque nouvelle étape
+//
 // Reconnaît les champs par leur rôle (autocomplete), leur nom, leur id, leur libellé, en français, néerlandais et
 // anglais, y compris dans les formulaires « web components » (Shadow DOM) et chez Workday, Greenhouse, Lever,
 // SmartRecruiters, Teamtailor, Recruitee, Indeed.
@@ -23,14 +28,19 @@
     { champ: "nom", auto: /^family-name$/,
       mots: /last.?name|family.?name|sur.?name|achternaam|lastname|\blname\b|\bnom\b|legalnamesection_lastname/,
       sauf: /pr[eé]nom|first|complet|full|utilisateur|user|entreprise|soci[eé]t[eé]|company|employeur|r[eé]f[eé]rence|rue|stra|ville|city|ecole|school|naam van/ },
-    { champ: "nom_complet", auto: /^name$/, mots: /full.?name|nom complet|volledige naam|your name|\bnaam\b|candidate\[name\]|^name\*?$|^name$/,
+    { champ: "nom_complet", auto: /^name$/, mots: /full.?name|nom complet|volledige naam|your name|\bnaam\b|candidate\[name\]|systemfield_name|^name\*?$|^name$/,
       sauf: /company|entreprise|soci[eé]t[eé]|user|utilisateur|school|ecole|bedrijf|file|fichier/ },
+    // Formulaires belges : le numéro (et la boîte) à part de la rue
+    { champ: "numero", auto: /^address-line2$/, mots: /huis.?nummer|house.?number|street.?number|\bnumero\b|\bn°|\bnr\.?\b|\bno\.?\b|^num$|\bnum\b/,
+      sauf: /t[eé]l|phone|gsm|mobile|national|tva|btw|vat|registre|rijksregister|compte|iban|fax|identit|telefoon|\bid\b|adres|address|rue et|straat en|street and/ },
     { champ: "code_postal", auto: /^postal-code$/, mots: /postal|\bzip\b|code postal|postcode|\bcp\b|postnummer/ },
     { champ: "ville", auto: /^address-level2$/, mots: /\bcity\b|ville|localit|woonplaats|gemeente|\bplaats\b|commune|town/ },
     { champ: "adresse", auto: /^(street-address|address-line1)$/,
       mots: /street|\brue\b|adresse|address|straat|addressline1|domicile/, sauf: /e-?mail|courriel|ip\b|url|web/ },
     { champ: "pays", auto: /^country(-name)?$/, mots: /country|\bpays\b|\bland\b/, sauf: /nationalit|code|indicatif/ },
   ];
+  // Indicatif du pays à part (Workday, iCIMS…) : on choisit la Belgique et le numéro s'écrit sans +32
+  const INDICATIF = /indicatif|country.?(phone.?)?code|phone.?code|dial.?code|landcode|landnummer|code (du )?pays|countrycode/;
   const LETTRE = /cover|lettre|motivation|motivatie|message|pourquoi|why|presentez|introduce|additional information|toelichting/;
   const CV = /resume|r[eé]sum[eé]|\bcv\b|curriculum|cv_|attach|pi[eè]ce|document|upload|bijlage|fichier|file/;
   const LETTRE_FICHIER = /cover|lettre|motivation|motivatie/;
@@ -78,8 +88,15 @@
     return sansAccents(morceaux.filter(Boolean).join(" | ").replace(/\s+/g, " ")).slice(0, 400);
   }
 
+  // « section-perso billing tel-national » → « tel-national » (norme HTML : le type est le dernier jeton)
+  function jetonAuto(e) {
+    const j = sansAccents(e.getAttribute("autocomplete") || "").split(/\s+/)
+      .filter((x) => x && !/^(section-|shipping|billing|home|work|mobile|fax|pager|webauthn|on|off)/.test(x));
+    return j.length ? j[j.length - 1] : "";
+  }
+
   function role(e, d) {
-    const auto = sansAccents(e.getAttribute("autocomplete") || "");
+    const auto = jetonAuto(e);
     const type = (e.type || "").toLowerCase();
     for (const r of ROLES) {
       if ((r.auto && r.auto.test(auto)) || (r.type && r.type.test(type))) return r.champ;
@@ -134,9 +151,26 @@
     const valeurs = { ...fiche, nom_complet: [fiche.prenom, fiche.nom].filter(Boolean).join(" ") };
     const rapport = { remplis: [], cv: false, lettre: false };
     const tous = champs(document).filter(visible);
+    // « Rue de la Loi 16 bte 3 » : s'il y a un champ « numéro », la rue s'écrit sans le numéro
+    const coupe = (valeurs.adresse || "").match(/^(.*?\D)[\s,]+(\d+\s*[a-z]?(?:\s*(?:bte|bus|boite|boîte|b)\.?\s*\w+)?)$/i);
+    if (coupe && tous.some((e) => !(e instanceof HTMLSelectElement) && e.type !== "file" && role(e, description(e)) === "numero")) {
+      valeurs.adresse = coupe[1].trim(); valeurs.numero = coupe[2].trim();
+    }
     const pris = new Set();
+    // Un indicatif à part ? Alors il prend « +32 » / Belgique et le numéro s'écrit sans indicatif
+    const indicatifs = tous.filter((e) => e.type !== "file" && INDICATIF.test(description(e)));
+    if (indicatifs.length && /^\+32/.test((valeurs.telephone || "").replace(/\s/g, ""))) {
+      valeurs.telephone = valeurs.telephone.replace(/^\s*\+32\s*/, "").replace(/^0/, "");
+      for (const e of indicatifs) {
+        if (!ecraser && e.value && !(e instanceof HTMLSelectElement && e.selectedIndex <= 0)) continue;
+        const ok = e instanceof HTMLSelectElement ? choisir(e, ["+32", "32", "belgique (+32)", "belgium (+32)", "belgique", "belgium", "belgie"])
+          : (ecrire(e, "+32"), true);
+        if (ok) { marquer(e); rapport.remplis.push({ champ: "indicatif", etiquette: description(e).slice(0, 60) }); }
+      }
+    }
     for (const e of tous) {
       if (e.type === "file" || e.type === "hidden" || e.type === "checkbox" || e.type === "radio" || e.type === "password") continue;
+      if (indicatifs.includes(e)) continue;
       const d = description(e);
       if (e instanceof HTMLTextAreaElement) {
         if (donnees.lettre && LETTRE.test(d) && (ecraser || !e.value.trim())) {
@@ -169,7 +203,139 @@
     return rapport;
   }
 
+  // ---------- Les autres questions : son agent propose, elle relit ----------
+  // Jamais : ce qui ne se devine pas ou ne se confie pas à une IA (et le consentement : c'est à elle de cocher)
+  const SENSIBLE = new RegExp(["password|mot de passe|wachtwoord|captcha|naissance|birth|geboorte|\\bage\\b|\\bage ?:|leeftijd",
+    "nationalit|national.?(number|nummer)|numero national|rijksregister|\\bniss\\b|\\binsz\\b|social security|\\bssn\\b",
+    "passport|passeport|paspoort|carte d.identite|identity card|identiteitskaart|\\biban\\b|\\bbic\\b|bank|compte bancaire",
+    "salaire|salary|\\bloon\\b|remuneration|wage|pay expectation|sexe|\\bgender|geslacht|handicap|disabilit",
+    "ethni|\\brace\\b|religion|veteran|signature|coupon|code promo"].join("|"));
+  const VIDE = /^(|select.*|choisi.*|selectionne.*|kies.*|maak een keuze.*|please select.*|none)$/;
+  const videChoix = (t) => VIDE.test(sansAccents(t).replace(/[^a-z0-9 ]/g, "").trim());
+  let compteur = 0;
+
+  // Le libellé lisible du champ (ce qu'elle voit), pas les attributs techniques
+  function intitule(e) {
+    const doc = e.getRootNode(), propre = (t) => (t || "").replace(/\s+/g, " ").replace(/\s*\*\s*$/, "").trim();
+    const lb = e.getAttribute("aria-labelledby");
+    if (lb) { const t = lb.split(/\s+/).map((i) => (doc.getElementById && doc.getElementById(i) || {}).textContent || "").join(" "); if (propre(t)) return propre(t); }
+    let libelle = null;
+    if (e.id && doc.querySelector) { try { libelle = doc.querySelector(`label[for="${CSS.escape(e.id)}"]`); } catch (x) { /* id exotique */ } }
+    if (libelle && propre(libelle.textContent)) return propre(libelle.textContent);
+    const parent = e.closest("label");
+    if (parent) { const c = parent.cloneNode(true); c.querySelectorAll("input,select,textarea,option").forEach((x) => x.remove()); if (propre(c.textContent)) return propre(c.textContent); }
+    if (e.getAttribute("aria-label")) return propre(e.getAttribute("aria-label"));
+    let p = e.parentElement;
+    for (let i = 0; i < 4 && p; i++, p = p.parentElement) {
+      const avant = [...p.querySelectorAll("label, legend, [class*=label], [class*=Label], [class*=question], h3, h4, p")]
+        .filter((x) => !x.contains(e) && !x.querySelector("input,select,textarea") && (x.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING));
+      const t = avant.length ? propre(avant[avant.length - 1].textContent) : "";
+      if (t && t.length < 300) return t;
+    }
+    return propre(e.placeholder || e.title || "");
+  }
+
+  function vide(e) {
+    if (e instanceof HTMLSelectElement) return e.selectedIndex < 0 || videChoix(e.options[e.selectedIndex].textContent);
+    return !e.value.trim();
+  }
+
+  function questions() {
+    const sortie = [], groupes = new Map();
+    for (const e of champs(document).filter(visible)) {
+      if (/^(file|hidden|password|checkbox|submit|button|reset|image|search|email|tel|color|range)$/.test(e.type)) continue;
+      const d = description(e);
+      if (e.type === "radio") {                      // un groupe de boutons = une question à choix
+        const nom = e.name || d;
+        if (!groupes.has(nom)) groupes.set(nom, []);
+        groupes.get(nom).push(e);
+        continue;
+      }
+      if (!vide(e) || role(e, d) || INDICATIF.test(d) || SENSIBLE.test(d)) continue;
+      const q = intitule(e);
+      if (!q || q.length < 3 || SENSIBLE.test(sansAccents(q))) continue;
+      if (!e.dataset.applaiQ) e.dataset.applaiQ = "q" + (++compteur);
+      const options = e instanceof HTMLSelectElement
+        ? [...e.options].map((o) => o.textContent.trim()).filter((t) => t && !videChoix(t)) : [];
+      const type = options.length ? "choix" : e instanceof HTMLTextAreaElement ? "long" : e.type === "number" ? "nombre"
+        : e.type === "date" ? "date" : "texte";
+      sortie.push({ id: e.dataset.applaiQ, question: q.slice(0, 300), type, ...(options.length ? { options: options.slice(0, 40) } : {}) });
+    }
+    for (const radios of groupes.values()) {
+      if (radios.some((r) => r.checked)) continue;
+      const premier = radios[0];
+      const fs = premier.closest("fieldset"), rg = premier.closest("[role=radiogroup]");
+      let q = (fs && fs.querySelector("legend") && fs.querySelector("legend").textContent)
+        || (rg && (rg.getAttribute("aria-label") || (rg.getAttribute("aria-labelledby") && intitule(rg))));
+      if (!q) {                                       // le texte juste avant le groupe
+        let p = premier.parentElement;
+        while (p && radios.some((r) => !p.contains(r))) p = p.parentElement;
+        if (p) q = intitule(p.querySelector("input"));
+      }
+      q = (q || "").replace(/\s+/g, " ").trim();
+      const options = radios.map((r) => intitule(r) || r.value).filter(Boolean);
+      if (!q || SENSIBLE.test(sansAccents(q)) || options.length < 2) continue;
+      if (!premier.dataset.applaiQ) { const id = "q" + (++compteur); radios.forEach((r) => (r.dataset.applaiQ = id)); }
+      sortie.push({ id: premier.dataset.applaiQ, question: q.slice(0, 300), type: "choix", options: options.slice(0, 40) });
+    }
+    return sortie.slice(0, 30);
+  }
+
+  function marquerARelire(e) {
+    e.style.setProperty("outline", "2px dashed #f5a524", "important");
+    e.style.setProperty("outline-offset", "2px", "important");
+    e.addEventListener("input", () => e.style.removeProperty("outline"), { once: true });
+  }
+
+  // Écrit les réponses proposées ; ne touche jamais un champ qu'elle a rempli entre-temps
+  function repondre(reponses) {
+    let n = 0;
+    for (const [id, valeur] of Object.entries(reponses || {})) {
+      if (valeur === null || valeur === undefined || valeur === "") continue;
+      const cibles = champs(document).filter((e) => e.dataset && e.dataset.applaiQ === id);
+      if (!cibles.length) continue;
+      const v = sansAccents(String(valeur)).trim();
+      if (cibles[0].type === "radio") {
+        if (cibles.some((r) => r.checked)) continue;
+        const r = cibles.find((x) => sansAccents(intitule(x) || x.value).trim() === v)
+          || cibles.find((x) => sansAccents(x.value).trim() === v);
+        if (!r) continue;
+        r.click(); marquerARelire(r.closest("label") || r); n++;
+        continue;
+      }
+      const e = cibles[0];
+      if (!vide(e)) continue;
+      if (e instanceof HTMLSelectElement) { if (choisir(e, [v])) { marquerARelire(e); n++; } continue; }
+      ecrire(e, String(valeur)); marquerARelire(e); n++;
+    }
+    return n;
+  }
+
+  // Formulaires en plusieurs étapes (Workday, SmartRecruiters…) : la page change sans se recharger.
+  // rappel() est appelé quand de nouveaux champs vides apparaissent, pendant 20 minutes au plus.
+  function suivre(rappel) {
+    if (racine.__applaiSuivi) { racine.__applaiSuivi.rappel = rappel; return; }
+    const etat = { rappel, signature: "" };
+    racine.__applaiSuivi = etat;
+    const signature = () => champs(document).filter(visible).filter((e) => e.type !== "hidden" && vide(e)).length + "|" + location.href;
+    etat.signature = signature();
+    let minuterie = null;
+    const obs = new MutationObserver(() => {
+      clearTimeout(minuterie);
+      minuterie = setTimeout(() => {
+        const s = signature();
+        if (s !== etat.signature && Number(s.split("|")[0]) > 0) { etat.signature = s; try { etat.rappel(); } catch (x) { /* rien */ } }
+      }, 900);
+    });
+    obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    setTimeout(() => { obs.disconnect(); delete racine.__applaiSuivi; }, 20 * 60 * 1000);
+  }
+
   racine.ApplaiRemplir = remplir;
+  racine.ApplaiRemplir.questions = questions;
+  racine.ApplaiRemplir.repondre = repondre;
+  racine.ApplaiRemplir.suivre = suivre;
+  racine.ApplaiRemplir.intitule = intitule;
   racine.ApplaiRemplir.description = description;     // pour les tests
   racine.ApplaiRemplir.role = (e) => role(e, description(e));
 })(typeof window !== "undefined" ? window : globalThis);

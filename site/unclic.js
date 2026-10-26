@@ -1,5 +1,5 @@
 // Réglages → « Remplir les formulaires en 1 clic » : sa fiche formulaire, le favori Safari (iPhone, iPad, Mac),
-// l'extension (Chrome, Edge, Brave, Firefox) et sa clé, et « copier mes infos » en secours.
+// l'extension (Chrome, Edge, Brave) et sa clé, et « copier mes infos » en secours.
 // Tout texte venant du serveur passe par textContent / value (jamais innerHTML).
 "use strict";
 const CHAMPS_FICHE = [["prenom", "Prénom"], ["nom", "Nom"], ["email", "Email"], ["telephone", "Téléphone"],
@@ -32,7 +32,7 @@ async function initUnClic() {
 
 function formulaireFiche() {
   const f = el("form", "fiche-unclic");
-  f.append(el("p", "petit-texte serre", "Vérifie-les une fois : prénom et nom dans le bon ordre, l'email que tu donnes aux employeurs."));
+  f.append(el("p", "petit-texte serre", "Vérifie une fois : prénom et nom dans le bon ordre, et l'email que tu donnes aux employeurs."));
   const grille = el("div", "grille-fiche");
   for (const [k, lib] of CHAMPS_FICHE) {
     const l = el("label", "champ"); const s = el("span", "", lib); const i = el("input");
@@ -66,10 +66,12 @@ function etapes(liste) { const ol = el("ol", "etapes-unclic"); liste.forEach((t)
 // Le favori : le moteur de remplissage + SES informations, dans un lien « javascript: » qu'on garde en favori.
 // Il n'appelle aucun serveur (certains sites l'interdiraient) ; le CV se joint à la main.
 async function codeFavori() {
-  const r = await fetch("remplir.js?v=20261026f", { cache: "no-cache" });
+  const r = await fetch("remplir.js?v=20261026g", { cache: "no-cache" });
   const moteur = (await r.text()).split("\n").filter((l) => !/^\s*\/\//.test(l)).map((l) => l.trim()).join("\n");
-  const appelFavori = `var r=window.ApplaiRemplir({fiche:${JSON.stringify(ficheUnClic)},lettre:null,cv:null});`
-    + "alert('Applai : '+r.remplis.length+' champ(s) rempli(s). Joins ton CV, relis, puis envoie.');";
+  // Formulaire en plusieurs étapes : chaque nouvelle étape se remplit aussi, sans recliquer
+  const appelFavori = `var f=${JSON.stringify(ficheUnClic)},R=window.ApplaiRemplir,r=R({fiche:f,lettre:null,cv:null});`
+    + "R.suivre(function(){R({fiche:f,lettre:null,cv:null});});"
+    + "alert('Applai : '+r.remplis.length+' champ(s) rempli(s).\\n1. Joins ton CV.\\n2. Relis.\\n3. Envoie.');";
   return "javascript:" + encodeURIComponent(`(function(){${moteur}\n${appelFavori}})();void 0`);
 }
 
@@ -82,34 +84,36 @@ function partieSafari(iphone) {
   };
   if (iphone) {
     d.append(etapes([
-      "Touche « Copier mon favori Applai » ci-dessous.",
-      "Dans Safari, ouvre n'importe quelle page, touche le bouton Partager, puis « Ajouter aux favoris ». Nomme-le « Applai », puis Enregistrer.",
-      "Touche l'icône des favoris (le livre), puis Modifier, puis le favori « Applai ». Efface son adresse et colle à la place (appui long, puis Coller). Touche OK.",
-      "Sur un formulaire de candidature : touche la barre d'adresse, puis le favori « Applai ». Tes informations se remplissent ; joins ton CV, relis, envoie.",
+      "Touche « Copier mon favori Applai » (ci-dessous).",
+      "Safari : touche Partager ⬆️ → « Ajouter un signet » → nomme-le Applai → Enregistrer.",
+      "Touche 📖 (signets) → Modifier → Applai. Efface l'adresse, appui long → Coller → OK.",
+      "Sur un formulaire : touche la barre d'adresse → Applai. Joins ton CV, relis, envoie.",
     ]), copier);
   } else {
     const lien = el("a", "bouton clair petit favori-glisser", "✍️ Applai"); lien.href = "#";
     codeFavori().then((c) => lien.setAttribute("href", c)).catch(() => {});
     lien.onclick = (ev) => { ev.preventDefault(); toast("Glisse ce bouton dans ta barre des favoris (ne clique pas dessus ici)."); };
     d.append(etapes([
-      "Affiche la barre des favoris de Safari (menu Présentation → Afficher la barre des favoris).",
-      "Glisse le bouton « ✍️ Applai » ci-dessous dans cette barre. (Ou copie le favori et colle-le comme adresse d'un nouveau favori.)",
-      "Sur un formulaire de candidature, clique sur « Applai » dans la barre : tes informations se remplissent. Joins ton CV, relis, envoie.",
+      "Safari : menu Présentation → « Afficher la barre des favoris ».",
+      "Glisse le bouton « ✍️ Applai » (ci-dessous) dans cette barre.",
+      "Sur un formulaire : clique « Applai » dans la barre. Joins ton CV, relis, envoie.",
     ]), lien, copier);
   }
-  d.append(el("p", "petit-texte", "Le favori contient tes informations ci-dessus : si tu les changes, recopie-le. Il ne remplit jamais rien sur LinkedIn, Jobat ou StepStone — leurs règles l'interdisent."));
+  d.append(el("p", "petit-texte", "Tu changes tes informations ? Recopie le favori. Rien n'est rempli sur LinkedIn, Jobat ni StepStone (interdit par leurs règles)."));
   return d;
 }
 
 function partieExtension() {
-  const d = partie("💻 Chrome, Edge, Brave, Firefox", "l'extension : remplit aussi ton CV et ta lettre");
+  const d = partie("💻 Chrome, Edge, Brave", "l'extension : remplit aussi ton CV, ta lettre et les questions");
   const telecharger = el("a", "bouton clair petit", "Télécharger l'extension"); telecharger.href = "telechargements/applai-extension.zip"; telecharger.download = "";
   d.append(etapes([
-    "Télécharge l'extension et décompresse-la (double-clic sur le fichier).",
-    "Ouvre la page des extensions : chrome://extensions (Chrome, Brave), edge://extensions (Edge) ; active le « Mode développeur ».",
-    "Clique sur « Charger l'extension non empaquetée » et choisis le dossier décompressé. Épingle l'icône Applai.",
-    "Crée ta clé ci-dessous, clique sur l'icône Applai et colle-la. Ensuite, sur un formulaire : icône Applai → « Remplir cette page ».",
+    "Clique « Télécharger l'extension » (ci-dessous), puis double-clique sur le fichier reçu.",
+    "Dans la barre d'adresse, tape chrome://extensions (Edge : edge://extensions). Active « Mode développeur » en haut à droite.",
+    "Clique « Charger l'extension non empaquetée » → choisis le dossier applai-extension.",
+    "Clique 🧩 en haut à droite → 📌 à côté d'Applai.",
+    "Clique « Créer ma clé » (ci-dessous) → Copier. Clique l'icône Applai → colle → Connecter.",
   ]), telecharger);
+  d.append(el("p", "petit-texte", "Ensuite, sur un formulaire : icône Applai → « Remplir cette page »."));
   const zone = el("div", "cle-unclic"); d.append(zone);
   const afficher = async () => {
     zone.textContent = "";
@@ -124,7 +128,7 @@ function partieExtension() {
         const c = el("button", "bouton clair petit", "Copier"); c.type = "button";
         c.onclick = async () => { try { await navigator.clipboard.writeText(r.cle); c.textContent = "Copié ✓"; } catch (e) { i.select(); } };
         ligne.append(i, c);
-        zone.append(ligne, el("p", "petit-texte", "Colle-la dans l'extension. Elle ne sera plus affichée ; l'ancienne ne marche plus."));
+        zone.append(ligne, el("p", "petit-texte", "Colle-la dans l'extension. Elle ne s'affiche qu'une fois."));
       } catch (e) { toast(e.message); }
     };
     zone.append(creer);
@@ -135,7 +139,7 @@ function partieExtension() {
     }
   };
   afficher();
-  d.append(el("p", "petit-texte", "Safari sur Mac et iPhone : l'extension arrivera par l'App Store. En attendant, le favori Applai fait le même travail (sans le CV)."));
+  d.append(el("p", "petit-texte", "Firefox et Safari : utilise le favori Applai (même travail, sans le CV)."));
   return d;
 }
 
