@@ -63,7 +63,11 @@ async function listeAdmin() {
   for (const u of gens) {
     const c = el("button", "admin-carte"); c.type = "button";
     const haut = el("div", "admin-carte-haut");
-    haut.append(el("b", "", u.email), el("span", "etiquette" + (u.en_marche ? " vert" : ""), u.en_marche ? "agent en marche" : "agent arrêté"));
+    // Mode économe : le processus ne tourne que pendant une discussion ou une tournée (toutes les 30 min), puis s'éteint
+    const recent = u.derniere_activite && Date.now() - Date.parse(u.derniere_activite.replace(" ", "T") + "Z") < 45 * 60 * 1000;
+    const statut = !u.agent ? ["pas d'agent", ""] : u.en_marche ? ["en train de travailler", " vert"]
+      : recent ? ["actif · en pause entre deux tournées", " vert"] : ["en veille", ""];
+    haut.append(el("b", "", u.email), el("span", "etiquette" + statut[1], statut[0]));
     c.append(haut, el("span", "sous", `${u.nom || "—"} · ${u.agent ? "Agent " + u.agent : "pas d'agent choisi"} · inscrit ${ilYa(u.cree_le)} · vu ${ilYa(u.vu_le)}`));
     const etapes = el("div", "admin-etapes");
     const etape = (texte, ok) => etapes.append(el("span", "puce-etat" + (ok ? " ok" : ""), texte));
