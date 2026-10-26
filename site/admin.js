@@ -73,11 +73,13 @@ async function listeAdmin() {
       u.test === "reussi" || u.test === "attente_accord");
     c.append(etapes);
     const ch = el("div", "admin-chiffres");
-    for (const [n, l] of [[u.offres, "offres vues"], [u.retenues, "retenues"], [u.envoyees, "envoyées"], [euros(u.cout_24h), "IA 24 h"], [euros(u.cout_total), "IA total"]]) {
+    for (const [n, l] of [[u.offres, "offres vues"], [u.retenues, "retenues"], [u.envoyees, "envoyées"], [u.a_postuler_site ?? 0, "sur leur site"],
+      [euros(u.cout_24h), "IA 24 h"], [euros(u.cout_total), "IA total"]]) {
       const d = el("div"); d.append(el("strong", "", String(n)), el("span", "", l)); ch.append(d);
     }
     c.append(ch);
     if (u.erreur) c.append(el("p", "erreur", u.erreur));
+    if (u.demandes) c.append(el("span", "puce-etat", `💡 ${u.demandes} demande(s) à ajouter`));
     c.append(el("span", "petit-texte", `Dernière activité de l'agent : ${ilYa(u.derniere_activite)}`));
     c.onclick = () => ouvrirUtilisateur(u.id);
     grille.append(c);
@@ -126,6 +128,10 @@ function secResume(z, d) {
   ligneAdmin(b, "Offres", `${u.offres} vues · ${u.retenues} retenues · ${u.envoyees} envoyées · ${u.tests_envoyes} tests`);
   ligneAdmin(b, "IA", `${euros(u.cout_24h)} sur 24 h · ${euros(u.cout_total)} au total`);
   ligneAdmin(b, "Dernière activité", ilYa(u.derniere_activite));
+  if (d.demandes && d.demandes.length) {
+    const q = bloc(z, "Ses demandes que l'agent ne sait pas encore faire");
+    for (const x of d.demandes.slice().reverse()) ligneAdmin(q, x.le || "", x.texte || "");
+  }
   const j = bloc(z, "Dernières actions de l'agent");
   journal(j, d.journal.slice(0, 15));
 }

@@ -615,7 +615,7 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .admin-carte-haut { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
 .admin-carte-haut b { word-break: break-word; }
 .admin-carte-haut .etiquette { flex: none; }
-.admin-chiffres { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 4px; }
+.admin-chiffres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
 .admin-chiffres div { padding: 10px 8px; border-radius: var(--r-s); background: rgba(255, 255, 255, .04); min-width: 0; }
 .admin-chiffres strong { display: block; font-size: 1.05rem; }
 .admin-chiffres span { font-size: .7rem; color: var(--texte-3); }
