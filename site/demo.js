@@ -104,6 +104,7 @@ window.DEMO = (() => {
     if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 },
       modele_local: { etat: "en marche", machine_dispo_mo: 6645, machine_total_mo: 7941, tri_7j: { emails: 0, duree_moyenne_s: null } } };
     if (chemin === "/api/admin/utilisateurs") return [compte];
+    if (chemin === "/api/admin/cle-support") return { active: true, expire_le: "25/11/2026", cle: "applai_demo_cle_fictive", ok: true };
     if (/\/budget$/.test(chemin)) return { ok: true, remis: 0.95 };
     if (/\/adresse$|\/relire-cv$/.test(chemin)) return { ok: true };
     if (/\/cv$|\/fichiers\//.test(chemin)) return new Blob(["%PDF-1.4 démo"], { type: "application/pdf" });

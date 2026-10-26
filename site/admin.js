@@ -85,6 +85,40 @@ async function listeAdmin() {
     grille.append(c);
   }
   zone.append(grille);
+  accesAssistant(zone);
+}
+
+// Clé support : l'administrateur la crée ici pour son assistant (Claude Code), qui suit les bêta-testeurs sans sa
+// session Google. Montrée UNE seule fois ; à ranger dans les secrets de l'environnement, jamais dans un message.
+async function accesAssistant(zone) {
+  const b = el("section", "bloc admin-bloc admin-cle");
+  b.append(el("h3", "", "Accès pour ton assistant (Claude)"));
+  const etat = el("p", "petit-texte", "…"); b.append(etat);
+  const rangee = el("div", "admin-actions"); b.append(rangee);
+  const sortie = el("div"); b.append(sortie);
+  zone.append(b);
+  const rafraichir = async () => {
+    try { const e = await appel("/api/admin/cle-support"); etat.textContent = e.active ? `Clé active jusqu'au ${e.expire_le}.` : "Aucune clé active."; }
+    catch (e) { etat.textContent = e.message; }
+  };
+  const creer = el("button", "bouton petit", "Créer une clé (30 jours)"); creer.type = "button";
+  creer.onclick = async () => {
+    if (!confirm("Une nouvelle clé remplace l'ancienne. Elle donne accès à tout le suivi pendant 30 jours. Continuer ?")) return;
+    try {
+      const r = await appel("/api/admin/cle-support", { methode: "POST" });
+      sortie.textContent = "";
+      const champ = el("input"); champ.readOnly = true; champ.value = r.cle; champ.setAttribute("aria-label", "Clé support");
+      const copier = el("button", "bouton clair petit", "Copier"); copier.type = "button";
+      copier.onclick = async () => { try { await navigator.clipboard.writeText(r.cle); toast("Clé copiée."); } catch (e) { champ.select(); } };
+      const ligne = el("div", "admin-adresse"); ligne.append(champ, copier);
+      sortie.append(ligne, el("p", "petit-texte", "Elle ne sera plus jamais affichée. Colle-la dans les réglages de l'environnement de Claude (variable APPLAI_CLE_SUPPORT), pas dans un message."));
+      rafraichir();
+    } catch (e) { toast(e.message); }
+  };
+  const revoquer = el("button", "bouton clair petit", "Révoquer"); revoquer.type = "button";
+  revoquer.onclick = async () => { try { await appel("/api/admin/cle-support", { methode: "DELETE" }); sortie.textContent = ""; toast("Clé révoquée."); rafraichir(); } catch (e) { toast(e.message); } };
+  rangee.append(creer, revoquer);
+  rafraichir();
 }
 
 async function ouvrirUtilisateur(id) {
