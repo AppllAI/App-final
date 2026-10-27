@@ -668,3 +668,22 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .ligne-copier span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ligne-copier button { flex: none; border: 1px solid rgba(255, 255, 255, .12); background: transparent; color: var(--texte);
   border-radius: 999px; padding: 5px 12px; font: 500 .8rem var(--sans); cursor: pointer; }
+
+/* ---------- Onglet « À postuler » ---------- */
+.postuler { display: grid; gap: 12px; max-width: 760px; }
+.aide-postuler { background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); border-radius: 20px; padding: 16px 18px; }
+.aide-postuler b { display: block; margin-bottom: 8px; font-weight: 600; }
+.aide-postuler .etapes-unclic { margin-bottom: 8px; }
+.carte-postuler { background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); border-radius: 20px; padding: 16px 18px;
+  display: grid; gap: 8px; }
+.tete-postuler { display: flex; align-items: center; gap: 10px; }
+.tete-postuler b { font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.tete-postuler .etiquette { margin-left: auto; }
+.titre-postuler { margin: 0; color: var(--texte); font-size: .92rem; }
+.explication-postuler { margin: 0; color: var(--texte-2); font-size: .86rem; line-height: 1.45; }
+.comment-postuler { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; color: var(--texte-2); font-size: .84rem; }
+.badge-postuler { flex: none; font-weight: 600; color: var(--texte); }
+.actions-postuler { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.petit-lien { justify-self: start; font-size: .82rem; }
+.postuler .lien { background: none; border: 0; padding: 0; color: var(--accent); font: 500 .84rem var(--sans); cursor: pointer; text-align: left; }
+.postuler .lien:disabled { color: var(--texte-3); cursor: default; }
