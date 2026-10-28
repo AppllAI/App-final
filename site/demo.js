@@ -141,6 +141,20 @@ window.DEMO = (() => {
         if (methode === "DELETE") { etat.cleExt = false; return { ok: true }; }
         return { active: !!etat.cleExt };
       }
+      // Onglet « À postuler » (démo)
+      if (chemin === "/api/a-postuler") return { offres: (etat.aPostuler ??= [
+        { id: 372, entreprise: "IKEA", titre: "Étudiant longue durée", ville: "Anderlecht", url: "https://be.indeed.com/", site: "be.indeed.com",
+          explication: "Temps partiel étudiant en magasin, relation client, horaires flexibles", ajoute_le: new Date().toISOString().slice(0, 19).replace("T", " "),
+          a_lettre: false, niveau: null, badge: "", conseil: "Connecte-toi à Indeed (compte gratuit) → « Postuler » → icône Applai → « Remplir cette page »." },
+        { id: 118, entreprise: "Mango", titre: "Vendeur / vendeuse", ville: "Bruxelles", url: "https://mango.wd3.myworkdayjobs.com/", site: "mango.wd3.myworkdayjobs.com",
+          explication: "Vente en boutique le week-end", ajoute_le: "2026-10-25 09:00:00", a_lettre: true, niveau: "presque",
+          badge: "✍️ presque tout", conseil: "Clique « Postuler », crée ton compte → icône Applai : chaque étape se remplit." }]) };
+      if (chemin.startsWith("/api/a-postuler/")) {
+        const [, , , id, action] = chemin.split("/");
+        if (action === "lettre" && methode === "GET") return { lettre: "Camille Dupont\nBruxelles\n\nMadame, Monsieur,\nVotre boutique… (démo)" };
+        if (action !== "lettre") etat.aPostuler = (etat.aPostuler || []).filter((o) => String(o.id) !== id);
+        return { ok: true };
+      }
       if (chemin === "/api/compatibilite") return { sites: { "boards.greenhouse.io": { essais: 3, remplis: 27, restants: 1 },
         "jobs.lever.co": { essais: 2, remplis: 12, restants: 4 }, "carriere-exemple.be": { essais: 1, remplis: 2, restants: 6 } } };
       // Suivi administrateur (démo : app.html?admin) — un testeur fictif

@@ -238,6 +238,7 @@ function initApp() {
   $("#notif").checked = !!utilisateur.notif_email;
   $("#agent-actuel").textContent = "Agent " + utilisateur.agent;
   initUnClic();
+  compterAPostuler();
   choixAudace($("#reglage-audace"), utilisateur.audace || "equilibre", async (mode) => {
     try { await enregistrerAudace(mode); toast("Style « " + AUDACES.find((a) => a.id === mode).nom + " » enregistré."); }
     catch (e) { toast(e.message); }
@@ -249,17 +250,18 @@ function initApp() {
   minuteur = setInterval(() => { if (!document.hidden) rafraichir(); }, 2500);
 }
 
-const VUES = ["accueil", "discussion", "candidatures", "test", "reglages"];
+const VUES = ["accueil", "discussion", "postuler", "candidatures", "test", "reglages"];
 function montrer(vue) {
   vueActive = vue;
   if (location.hash.slice(1) !== vue) history.replaceState(null, "", "#" + vue);
   document.querySelectorAll(".onglet").forEach((o) => o.setAttribute("aria-selected", String(o.dataset.vue === vue)));
   for (const v of VUES) $("#vue-" + v).hidden = v !== vue;
   $("#saisie").hidden = vue !== "discussion";
-  $("#titre-vue").textContent = { accueil: "Accueil", discussion: "Discussion", candidatures: "Candidatures", test: "Phase de test", reglages: "Réglages" }[vue];
+  $("#titre-vue").textContent = { accueil: "Accueil", discussion: "Discussion", postuler: "À postuler", candidatures: "Candidatures", test: "Phase de test", reglages: "Réglages" }[vue];
   if (vue === "accueil") afficherTableau();
   if (vue === "discussion") { nonLus = 0; majPastille(); defiler(); }
   if (vue === "candidatures") afficherCandidatures();
+  if (vue === "postuler") afficherAPostuler();
   if (vue === "test") afficherTest();
 }
 document.querySelectorAll(".onglet").forEach((o) => (o.onclick = () => montrer(o.dataset.vue)));
