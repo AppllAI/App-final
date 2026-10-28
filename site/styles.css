@@ -692,3 +692,8 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .admin-source input { width: 100%; }
 .admin-source .admin-ligne { grid-template-columns: 1fr auto; align-items: center; border-top: 0; }
 .admin-source input { min-height: 42px; padding: 9px 12px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.admin-table th, .admin-table td { text-align: right; padding: 6px 4px; border-top: 1px solid rgba(255, 255, 255, .06); }
+.admin-table th:first-child, .admin-table td:first-child { text-align: left; }
+.admin-table th { color: var(--texte-3); font-weight: 500; font-size: .74rem; }
+.admin-table td.fort { color: var(--accent); font-weight: 600; }
