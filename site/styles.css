@@ -127,7 +127,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; background: var
 .boite p.sous { margin-bottom: 26px; }
 .champ { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .champ label { font: 500 .72rem var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--texte-3); }
-input[type=email], input[type=text], input[type=number], textarea {
+input[type=email], input[type=text], input[type=number], input[type=password], textarea {
   width: 100%; font: inherit; color: var(--texte); background: var(--fond); border: 1px solid var(--trait-2); border-radius: 0;
   padding: 13px 14px; min-height: 50px; transition: border-color .2s, box-shadow .2s; }
 input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-fond); outline: none; }
@@ -687,3 +687,8 @@ input[type=range]::-moz-range-thumb { border-radius: 50%; }
 .petit-lien { justify-self: start; font-size: .82rem; }
 .postuler .lien { background: none; border: 0; padding: 0; color: var(--accent); font: 500 .84rem var(--sans); cursor: pointer; text-align: left; }
 .postuler .lien:disabled { color: var(--texte-3); cursor: default; }
+.admin-sources { display: grid; gap: 14px; }
+.admin-source { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .06); }
+.admin-source input { width: 100%; }
+.admin-source .admin-ligne { grid-template-columns: 1fr auto; align-items: center; border-top: 0; }
+.admin-source input { min-height: 42px; padding: 9px 12px; }
