@@ -43,6 +43,7 @@ async function etatServeur() {
     puce(`Agents en marche : ${(e.agents_en_marche && (e.agents_en_marche.conversations + e.agents_en_marche.tournees)) || 0}`, true);
     puce(`Modèle local : ${m.etat || "absent"}`, m.etat === "en marche");
     if (m.machine_dispo_mo) puce(`RAM libre : ${(m.machine_dispo_mo / 1024).toFixed(1)} / ${(m.machine_total_mo / 1024).toFixed(1)} Go`, m.machine_dispo_mo > 1500);
+    puce(e.reponses ? "Réponses des recruteurs : reçues par l'agent ✓" : "⚠️ Réponses des recruteurs : seulement dans leur Gmail", !!e.reponses);
     if (m.tri_7j) puce(`Emails triés en local (7 j) : ${m.tri_7j.emails}${m.tri_7j.duree_moyenne_s ? ` · ${m.tri_7j.duree_moyenne_s} s` : ""}`, true);
   } catch (e) { z.append(el("span", "puce-etat", "État du serveur indisponible")); }
 }
@@ -231,12 +232,32 @@ function secResume(z, d, id) {
   ligneAdmin(b, "Offres", `${u.offres} vues · ${u.retenues} retenues · ${u.envoyees} envoyées · ${u.tests_envoyes} tests`);
   ligneAdmin(b, "IA", `${euros(u.cout_24h)} sur 24 h · ${euros(u.cout_total)} au total`);
   ligneAdmin(b, "Dernière activité", ilYa(u.derniere_activite));
+  if (d.entonnoir) secEntonnoir(z, d.entonnoir);
   if (d.demandes && d.demandes.length) {
     const q = bloc(z, "Ses demandes que l'agent ne sait pas encore faire");
     for (const x of d.demandes.slice().reverse()) ligneAdmin(q, x.le || "", x.texte || "");
   }
   const j = bloc(z, "Dernières actions de l'agent");
   journal(j, d.journal.slice(0, 15));
+}
+
+// Le suivi réel : chaque jour, de l'offre trouvée à la réponse ; et ce que rapporte chaque source
+function secEntonnoir(z, e) {
+  const b = bloc(z, "Entonnoir des 7 derniers jours");
+  if (!e.jours.length) { b.append(el("p", "sous", "Rien sur la période.")); return; }
+  const t = el("table", "admin-table");
+  const tete = el("tr"); ["Jour", "Trouvées", "Retenues", "Lettres", "Envoyées", "Réponses"].forEach((x) => tete.append(el("th", "", x)));
+  t.append(tete);
+  for (const j of e.jours) {
+    const l = el("tr"); l.append(el("td", "", j.jour.slice(5)));
+    for (const k of ["trouvees", "retenues", "lettres", "envoyees", "reponses"]) l.append(el("td", k === "envoyees" ? "fort" : "", String(j[k] || 0)));
+    t.append(l);
+  }
+  b.append(t);
+  if (e.sources.length) {
+    const s = bloc(z, "Ce que rapporte chaque source (7 jours)");
+    for (const x of e.sources) ligneAdmin(s, x.source, `${x.trouvees} trouvée(s) · ${x.retenues || 0} retenue(s) · ${x.envoyees || 0} envoyée(s)`);
+  }
 }
 
 // Actions de l'administrateur sur cet espace (le serveur les écrit dans la base de son agent)

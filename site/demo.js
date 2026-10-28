@@ -101,7 +101,7 @@ window.DEMO = (() => {
     const compte = { id: "demo1", email: "sam.demo@gmail.com", nom: "Sam", agent: "student", cree_le: "2026-10-25 14:50:00",
       vu_le: Date.now() / 1000 - 600, gmail_ok: true, admin: false, en_marche: true, cv: true, test: "en_cours", note: null,
       offres: 113, retenues: 6, envoyees: 0, tests_envoyes: 2, cout_24h: 0.21, cout_total: 0.21, derniere_activite: "2026-10-25 15:20:00" };
-    if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 },
+    if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 }, reponses: true,
       modele_local: { etat: "en marche", machine_dispo_mo: 6645, machine_total_mo: 7941, tri_7j: { emails: 0, duree_moyenne_s: null } } };
     if (chemin === "/api/admin/utilisateurs") return [compte];
     if (chemin === "/api/admin/cle-support") return { active: true, expire_le: "25/11/2026", cle: "applai_demo_cle_fictive", ok: true };
@@ -115,6 +115,9 @@ window.DEMO = (() => {
       journal: [{ agent: "redacteur", quoi: "→ validee", le: "2026-10-25 15:05:00" }] };
     return { compte, fiche_cv: "# Fiche profil (démo)\n- Bachelier en économie\n- Caissier le samedi depuis 1 an",
       objectif: "villes: [Bruxelles]\npostes_vises: [vendeur, serveur]", memoire: [], exigences: [],
+      entonnoir: { jours: [{ jour: "2026-10-28", trouvees: 41, retenues: 9, lettres: 8, envoyees: 7, reponses: 1 },
+        { jour: "2026-10-27", trouvees: 37, retenues: 6, lettres: 5, envoyees: 5, reponses: 0 }],
+        sources: [{ source: "spontanee", trouvees: 20, retenues: 18, envoyees: 11 }, { source: "indeed", trouvees: 52, retenues: 4, envoyees: 1 }] },
       test: { tour: 1, statut: "en_cours", note: null, note_ia: 16, criteres: [], commentaire: "", historique: [],
         candidatures: [{ titre: "Vendeur étudiant", entreprise: "Boutique Lumen", envoye_le: "2026-10-25 15:10:00", note_ia: 16 }] },
       offres: [{ id: 16, titre: "Vendeur étudiant (démo)", entreprise: "Boutique Lumen", ville: "Bruxelles", source: "indeed", statut: "repetee",
