@@ -155,6 +155,10 @@ window.DEMO = (() => {
         if (action !== "lettre") etat.aPostuler = (etat.aPostuler || []).filter((o) => String(o.id) !== id);
         return { ok: true };
       }
+      if (chemin === "/api/admin/sources") {
+        if (methode === "POST") Object.keys(corps).forEach((k) => (etat.sources = { ...etat.sources, [k.split("_")[0].toLowerCase()]: true }));
+        return { adzuna: false, jooble: false, careerjet: false, ...etat.sources };
+      }
       if (chemin === "/api/compatibilite") return { sites: { "boards.greenhouse.io": { essais: 3, remplis: 27, restants: 1 },
         "jobs.lever.co": { essais: 2, remplis: 12, restants: 4 }, "carriere-exemple.be": { essais: 1, remplis: 2, restants: 6 } } };
       // Suivi administrateur (démo : app.html?admin) — un testeur fictif

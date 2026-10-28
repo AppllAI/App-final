@@ -89,8 +89,55 @@ async function listeAdmin() {
     grille.append(c);
   }
   zone.append(grille);
+  sourcesOffres(zone);
   sitesRemplis(zone);
   accesAssistant(zone);
+}
+
+// Sources d'offres : les clés gratuites des agrégateurs (Adzuna, Jooble, Careerjet). Jamais réaffichées ; les agents
+// les utilisent à leur prochaine tournée.
+const SOURCES = [
+  { id: "adzuna", nom: "Adzuna", lien: "https://developer.adzuna.com", etapes: "Register → valide l'email → Dashboard → API Access Details.",
+    champs: [["ADZUNA_APP_ID", "Application ID"], ["ADZUNA_APP_KEY", "Application Key"]] },
+  { id: "jooble", nom: "Jooble", lien: "https://be.jooble.org/api/about", etapes: "Remplis le formulaire : la clé arrive par email.",
+    champs: [["JOOBLE_CLE", "Clé API"]] },
+  { id: "careerjet", nom: "Careerjet", lien: "https://www.careerjet.be/partners/", etapes: "Inscription (compte éditeur) → API → copie ta clé.",
+    champs: [["CAREERJET_CLE", "Clé API"]] },
+];
+
+async function sourcesOffres(zone, ancien) {
+  const b = el("section", "bloc admin-bloc");
+  b.append(el("h3", "", "Sources d'offres"), el("p", "sous", "Gratuit. Chaque clé ajoute des milliers de sites (Actiris, VDAB, intérim, enseignes…)."));
+  if (ancien) ancien.replaceWith(b); else zone.append(b);
+  let etat = {};
+  try { etat = await appel("/api/admin/sources"); } catch (e) { b.append(el("p", "sous", e.message)); return; }
+  const f = el("form", "admin-sources");
+  for (const s of SOURCES) {
+    const bloc = el("div", "admin-source");
+    const tete = el("div", "admin-ligne");
+    const lien = el("a", "", `${s.nom} ↗`); lien.href = s.lien; lien.target = "_blank"; lien.rel = "noopener";
+    tete.append(lien, el("span", "puce-etat" + (etat[s.id] ? " ok" : ""), etat[s.id] ? "branché ✓" : "pas encore"));
+    bloc.append(tete, el("p", "petit-texte serre", s.etapes));
+    for (const [nom, lib] of s.champs) {
+      const i = el("input"); i.name = nom; i.type = "password"; i.autocomplete = "off"; i.spellcheck = false;
+      i.placeholder = etat[s.id] ? `${lib} (déjà enregistrée)` : lib; i.maxLength = 80;
+      bloc.append(i);
+    }
+    f.append(bloc);
+  }
+  const ok = el("button", "bouton petit", "Enregistrer"); ok.type = "submit";
+  f.append(ok);
+  f.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const corps = {};
+    for (const s of SOURCES) for (const [nom] of s.champs) { const v = f.elements[nom].value.trim(); if (v) corps[nom] = v; }
+    if (!Object.keys(corps).length) return toast("Colle au moins une clé.");
+    ok.disabled = true;
+    try { await appel("/api/admin/sources", { methode: "POST", corps }); toast("Enregistré : les agents s'en servent dès leur prochaine tournée."); sourcesOffres(zone, b); }
+    catch (e) { toast(e.message); }
+    ok.disabled = false;
+  };
+  b.append(f);
 }
 
 // « Remplir en 1 clic » : ce qui se remplit sur chaque site, d'après les rapports de l'extension (nombres seuls)
