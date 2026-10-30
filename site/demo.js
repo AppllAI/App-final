@@ -101,7 +101,8 @@ window.DEMO = (() => {
     const compte = { id: "demo1", email: "sam.demo@gmail.com", nom: "Sam", agent: "student", cree_le: "2026-10-25 14:50:00",
       vu_le: Date.now() / 1000 - 600, gmail_ok: true, admin: false, en_marche: true, cv: true, test: "en_cours", note: null,
       offres: 113, retenues: 6, envoyees: 0, tests_envoyes: 2, cout_24h: 0.21, cout_total: 0.21, derniere_activite: "2026-10-25 15:20:00" };
-    if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 }, reponses: true,
+    if (chemin === "/api/admin/pause-api") return { pause: true };
+    if (chemin === "/api/admin/etat") return { agents_en_marche: { conversations: 1, tournees: 0 }, reponses: true, api_en_pause: true,
       modele_local: { etat: "en marche", machine_dispo_mo: 6645, machine_total_mo: 7941, tri_7j: { emails: 0, duree_moyenne_s: null } } };
     if (chemin === "/api/admin/utilisateurs") return [compte];
     if (chemin === "/api/admin/cle-support") return { active: true, expire_le: "25/11/2026", cle: "applai_demo_cle_fictive", ok: true };
