@@ -44,6 +44,18 @@ async function etatServeur() {
     puce(`Modèle local : ${m.etat || "absent"}`, m.etat === "en marche");
     if (m.machine_dispo_mo) puce(`RAM libre : ${(m.machine_dispo_mo / 1024).toFixed(1)} / ${(m.machine_total_mo / 1024).toFixed(1)} Go`, m.machine_dispo_mo > 1500);
     puce(e.reponses ? "Réponses des recruteurs : reçues par l'agent ✓" : "⚠️ Réponses des recruteurs : seulement dans leur Gmail", !!e.reponses);
+    // API Claude coupée pour tous les agents (seul le modèle local travaille) : un bouton pour la rendre ou la couper
+    const pause = el("button", "puce-etat bouton-pause" + (e.api_en_pause ? "" : " ok"),
+      e.api_en_pause ? "⏸ API Claude en pause · Reprendre" : "▶ API Claude active · Mettre en pause");
+    pause.type = "button";
+    pause.onclick = async () => {
+      const couper = !e.api_en_pause;
+      if (!confirm(couper ? "Couper l'API Claude pour tous les agents ? Seul le travail gratuit continue."
+        : "Rendre l'API Claude aux agents ? Ils recommencent à chercher et à écrire (budget de chacun).")) return;
+      try { await appel("/api/admin/pause-api", { methode: "POST", corps: { pause: couper } }); toast(couper ? "API en pause." : "API reprise."); etatServeur(); }
+      catch (err) { toast(err.message); }
+    };
+    z.append(pause);
     if (m.tri_7j) puce(`Emails triés en local (7 j) : ${m.tri_7j.emails}${m.tri_7j.duree_moyenne_s ? ` · ${m.tri_7j.duree_moyenne_s} s` : ""}`, true);
   } catch (e) { z.append(el("span", "puce-etat", "État du serveur indisponible")); }
 }
